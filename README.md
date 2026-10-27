@@ -14,6 +14,8 @@
 - [业务术语](CONTEXT.md)
 - [协作约定](AGENTS.md)
 
+数据库开发与测试统一使用 Docker Compose，不启动宿主机 MySQL。运行 `python tools/dev_mysql.py start`（使用 backend/.venv 的 Python），分别启动开发库 3307 与测试库 3308；完整命令见本地开发文档。
+
 ## 首个开发目标
 
 发布客观题 → 选择方向并领取每日题 → 作答与判分 → 提交日打卡 → 生成个人复习安排。

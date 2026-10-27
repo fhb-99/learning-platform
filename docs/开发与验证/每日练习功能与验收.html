@@ -7,7 +7,9 @@ body{margin:0;background:#f5f7f2;color:#35433e;font:15px/1.85 system-ui,"Microso
 <section id="use"><h2>从登录到答题结果</h2><div class="flow"><span>创建账号 / 登录</span><span>选择领域与学习方向</span><span>领取每日题</span><span>单选并提交</span><span>成绩、解析、打卡与复习日期</span></div>
 <p>打开 <a href="http://127.0.0.1:5173/">本地学习空间</a>，左侧进入“每日练习”。用户名使用 3–32 位小写字母、数字或下划线并以字母开头；密码为 10–128 个字符。注册成功后自动登录。系统不提供固定默认账号。</p>
 <p>计算机领域目前包含“计算机基础”方向，英语领域包含“英语词汇”方向，每个方向 6 道自编单选样题。它们用于联调与验收，不能用这 12 道样题证明复习策略有效。</p>
-<details open><summary>开发库升级与样题导入</summary><pre>Set-Location backend
+<details open><summary>开发库升级与样题导入</summary><pre># 在项目根目录启动 Docker 数据库
+./backend/.venv/Scripts/python.exe tools/dev_mysql.py start
+Set-Location backend
 ./.venv/Scripts/python.exe -m pip install -r requirements.txt
 ./.venv/Scripts/python.exe -m alembic upgrade head
 ./.venv/Scripts/python.exe -m app.seed
@@ -38,12 +40,12 @@ body{margin:0;background:#f5f7f2;color:#35433e;font:15px/1.85 system-ui,"Microso
 npm --prefix frontend run build
 Set-Location backend
 ./.venv/Scripts/python.exe -m ruff check --config pyproject.toml . ../tools
-$env:TEST_DATABASE_URL = (Get-Content ../build/mysql/test.env -Raw).Trim().Substring('TEST_DATABASE_URL='.Length)
+$env:TEST_DATABASE_URL = (Get-Content ../build/docker/test.env -Raw).Trim().Substring('TEST_DATABASE_URL='.Length)
 ./.venv/Scripts/python.exe -m pytest -q
 Remove-Item Env:TEST_DATABASE_URL</pre>
-<p>本轮本地 MySQL 测试共 16 项通过：包含空库迁移升级/回退、重复导入、密码认证、CSRF、会话过期、答对/答错、答案不提前泄露、用户隔离、非法载荷、同键与异键并发提交、事务故障回滚、跨午夜重试、版本冻结、无题方向与复习规则。</p>
+<p>切换 Docker 后，在独立 MySQL 测试容器重新执行 16 项测试全部通过：包含空库迁移升级/回退、重复导入、密码认证、CSRF、会话过期、答对/答错、答案不提前泄露、用户隔离、非法载荷、同键与异键并发提交、事务故障回滚、跨午夜重试、版本冻结、无题方向与复习规则。</p>
 <p>浏览器验收使用独立本地演示账号，不使用个人学习数据；确认选择选项、提交后显示解析、打卡和下次复习日期，以及刷新恢复结果。凭据与截图仅放在被忽略的 build/verification/，不得提交。测试客户端仍有既有 Starlette/httpx 弃用提示，不影响本轮断言。</p>
-<p>测试库必须显式指定为以 _test 结尾的空专用 MySQL 库；测试只清理本次创建的表。不以 SQLite 代替 MySQL 的并发和事务证据。已有 CI 会运行完整 pytest；远程结果与分支交付状态以对应 PR 为准。</p>
+<p>开发与测试数据库均由 Docker Compose 运行，启动方式见本地开发与持续集成文档。测试库必须显式指定为以 _test 结尾的空专用 MySQL 库；测试只清理本次创建的表。不以 SQLite 代替 MySQL 的并发和事务证据。已有 CI 会运行完整 pytest；远程结果与分支交付状态以对应 PR 为准。</p>
 </section>
 <section id="limits"><h2>范围与后续工作</h2><ul><li>首版仅支持单选题；尚无简答题 AI 评分、自评输入、题库管理页面和人工复核。发布入口当前为后端样题导入命令。</li><li>每道样题当前归属一个方向，尚无跨方向题目映射；选题采用确定性轮转，不是个性化推荐。用户时区默认新加坡，尚无设置页面。</li><li>同日每日题不提供改答案或再答；后续复习应创建新的 Attempt，不能覆盖旧记录。</li><li>本地登录能力尚未包括密码找回、账号管理、登录限流与审计。上线前需补齐这些能力，并启用 HTTPS、COOKIE_SECURE=true；当前没有部署和 CD。</li><li>复习和历史列表尚未开放，离线行为分析尚未接入。规则效果须通过后续实验检验。</li></ul>
 <p>实现参考：<a href="https://docs.python.org/3.13/library/hashlib.html#hashlib.scrypt">Python scrypt</a>、<a href="https://docs.sqlalchemy.org/en/20/orm/session_transaction.html">SQLAlchemy 事务</a>、<a href="https://fastapi.tiangolo.com/advanced/response-cookies/">FastAPI Cookie 响应</a>。</p></section>
