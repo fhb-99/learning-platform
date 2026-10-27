@@ -11,6 +11,13 @@ const selectedDomain = computed(() => domains.value.find(domain => domain.code =
 const message = ref('正在连接服务…')
 const checkedAt = ref('尚未检查')
 const serviceDetails = ref<HTMLDetailsElement | null>(null)
+const sections = [
+  { id: 'practice', name: '每日练习', intro: '从感兴趣的领域开始，专注于今天的学习。', title: '每日题正在准备', description: '后续将按学习方向提供每日题。当前可浏览知识领域，答题功能尚未开放。', icon: 'M5 4h10l4 4v12H5z M14 4v5h5 M9 13h6 M9 17h4' },
+  { id: 'review', name: '个人复习', intro: '留一点时间，回顾已经学过的知识。', title: '复习功能正在准备', description: '接入练习后，将根据作答情况安排个人复习任务。目前还不能生成复习计划。', icon: 'M5 8a8 8 0 1 1-1 7 M5 3v5h5 M12 8v5l3 2' },
+  { id: 'history', name: '学习记录', intro: '在这里回看每一次练习与复习。', title: '学习记录正在准备', description: '接入作答功能后，这里将展示练习历史与结果。目前尚未采集学习记录。', icon: 'M5 4h14v16H5z M9 8h6 M9 12h6 M9 16h4' },
+] as const
+const activeSection = ref<(typeof sections)[number]['id']>('practice')
+const currentSection = computed(() => sections.find(section => section.id === activeSection.value)!)
 
 function describeDomain(code: string) {
   if (code === 'computer') return '编程语言、计算机基础与工程实践'
@@ -54,66 +61,68 @@ onMounted(checkConnection)
 
 <template>
   <a class="skip-link" href="#main-content">跳转到主要内容</a>
-  <header class="site-header">
-    <div class="header-inner">
+  <div class="app-shell">
+    <aside class="app-sidebar">
       <a class="brand" href="/" aria-label="知识练习首页">
-        <span class="brand-mark" aria-hidden="true"><svg viewBox="0 0 24 24"><path d="M5 5h6v14H5zM14 5h5v14h-5" /></svg></span>
-        <span>知识练习</span>
+        <span class="brand-mark" aria-hidden="true"><svg viewBox="0 0 24 24"><path d="M4 5h5a4 4 0 0 1 3 2 4 4 0 0 1 3-2h5v14h-5a4 4 0 0 0-3 1 4 4 0 0 0-3-1H4z M12 7v13" /></svg></span>
+        <span>知识练习<small>学习与复习空间</small></span>
       </a>
-      <span class="header-divider" aria-hidden="true"></span>
-      <span class="current-page">学习空间</span>
-      <span class="preview-label">本地预览</span>
-    </div>
-  </header>
+      <nav class="feature-nav" aria-label="功能导航">
+        <p class="nav-label">学习</p>
+        <ul>
+          <li v-for="section in sections" :key="section.id">
+            <button :class="{ active: activeSection === section.id }" :aria-current="activeSection === section.id ? 'page' : undefined" @click="activeSection = section.id">
+              <svg viewBox="0 0 24 24" aria-hidden="true"><path :d="section.icon" /></svg>
+              <span>{{ section.name }}</span><span v-if="activeSection === section.id" class="nav-indicator" aria-hidden="true"></span>
+            </button>
+          </li>
+        </ul>
+      </nav>
+      <div class="sidebar-bottom"><span class="preview-dot" aria-hidden="true"></span><span>本地预览<small>功能逐步开放中</small></span></div>
+    </aside>
 
-  <main id="main-content">
-    <div class="page-heading">
-      <div><p class="eyebrow">学习空间</p><h1>从一个领域开始</h1><p class="intro">选择你关注的知识领域，查看练习内容。</p></div>
-      <a class="text-link" href="#service-status" @click="serviceDetails && (serviceDetails.open = true)">服务状态 <span aria-hidden="true">↗</span></a>
-    </div>
+    <main id="main-content">
+      <div class="topbar"><span>学习空间 <span class="breadcrumb-divider">/</span> {{ currentSection.name }}</span><a href="#service-status" @click="serviceDetails && (serviceDetails.open = true)"><span class="status-dot" :class="{ online: ready, pending: loading }" aria-hidden="true"></span>服务状态</a></div>
+      <div class="page-content">
+        <header class="page-heading"><p class="eyebrow">学习空间</p><h1>{{ currentSection.name }}</h1><p class="intro">{{ currentSection.intro }}</p></header>
 
-    <section class="workspace" aria-label="学习领域与内容" :aria-busy="loading">
-      <aside class="domain-sidebar" aria-labelledby="domain-heading">
-        <div class="section-label"><h2 id="domain-heading">知识领域</h2><span>{{ ready ? String(domains.length).padStart(2, '0') : '—' }}</span></div>
-        <div v-if="loading" class="sidebar-message">正在加载领域…</div>
-        <div v-else-if="!ready" class="sidebar-message">领域暂不可用</div>
-        <div v-else-if="!domains.length" class="sidebar-message">暂无知识领域</div>
-        <div v-else class="domain-list" aria-label="选择知识领域">
-          <button v-for="domain in domains" :key="domain.code" class="domain-button" :class="{ selected: selectedCode === domain.code }" :aria-pressed="selectedCode === domain.code" @click="selectedCode = domain.code">
-            <span class="domain-icon" aria-hidden="true">{{ domain.code === 'computer' ? '⌘' : domain.code === 'english' ? 'Aa' : '文' }}</span>
-            <span>{{ domain.name }}</span><span class="domain-arrow" aria-hidden="true">→</span>
-          </button>
-        </div>
-        <p class="sidebar-note">先确定领域，再循序练习。</p>
-      </aside>
-
-      <div class="content-pane" aria-live="polite">
-        <template v-if="ready && selectedDomain">
-          <div class="content-heading"><div><h2>{{ selectedDomain.name }}</h2><p>{{ describeDomain(selectedDomain.code) }}</p></div><span class="quiet-badge">尚未开放练习</span></div>
-          <div class="empty-state">
-            <svg class="empty-icon" viewBox="0 0 64 64" fill="none" aria-hidden="true"><path d="M13 15h15a7 7 0 0 1 7 7v29a12 12 0 0 0-9-4H13V15Z"/><path d="M35 22a7 7 0 0 1 7-7h9v32h-7a12 12 0 0 0-9 4"/><path d="M20 24h7m-7 7h7m15-7h3m-3 7h3"/></svg>
-            <h3>练习内容正在准备</h3>
-            <p>后续将在这里提供每日题与个人复习。<br />当前可以浏览领域，答题功能尚未接入。</p>
+        <section class="workspace" :aria-label="currentSection.name + '内容'" :aria-busy="loading">
+          <div class="domain-toolbar">
+            <span class="section-label">知识领域</span>
+            <div v-if="loading" class="toolbar-message">正在加载…</div>
+            <div v-else-if="!ready" class="toolbar-message">暂不可用</div>
+            <div v-else-if="!domains.length" class="toolbar-message">暂无领域</div>
+            <div v-else class="domain-list" aria-label="选择知识领域">
+              <button v-for="domain in domains" :key="domain.code" :class="{ selected: selectedCode === domain.code }" :aria-pressed="selectedCode === domain.code" @click="selectedCode = domain.code">{{ domain.name }}</button>
+            </div>
           </div>
-          <div class="feature-note"><span class="small-label">后续功能</span><span>每日一题</span><span class="dot-separator" aria-hidden="true">·</span><span>个人复习</span><span class="dot-separator" aria-hidden="true">·</span><span>学习记录</span></div>
-        </template>
-        <div v-else class="empty-state connection-state">
-          <span class="state-symbol" aria-hidden="true">{{ loading ? '…' : ready ? '＋' : '!' }}</span>
-          <h2>{{ loading ? '正在加载学习空间' : ready ? '还没有知识领域' : '暂时无法加载' }}</h2>
-          <p>{{ loading ? '请稍候，正在获取领域信息。' : ready ? '添加领域后，会在这里显示。' : message }}</p>
-          <button v-if="!loading" class="secondary-button" @click="checkConnection">重新加载</button>
-        </div>
-      </div>
-    </section>
+          <div class="content-pane" aria-live="polite">
+            <template v-if="ready && selectedDomain">
+              <div class="content-heading"><div><h2>{{ selectedDomain.name }}</h2><p>{{ describeDomain(selectedDomain.code) }}</p></div><span class="quiet-badge">建设中</span></div>
+              <div class="empty-state">
+                <span class="empty-illustration"><svg viewBox="0 0 64 64" fill="none" aria-hidden="true"><path d="M13 17h13a10 10 0 0 1 9 5v28a13 13 0 0 0-9-4H13V17Z"/><path d="M35 22a10 10 0 0 1 9-5h7v29h-7a13 13 0 0 0-9 4"/><path d="M21 26h6m-6 7h6m15-7h2m-2 7h2"/></svg></span>
+                <h3>{{ currentSection.title }}</h3><p>{{ currentSection.description }}</p>
+              </div>
+            </template>
+            <div v-else class="empty-state connection-state">
+              <span class="state-symbol" aria-hidden="true">{{ loading ? '…' : ready ? '＋' : '!' }}</span>
+              <h2>{{ loading ? '正在加载学习空间' : ready ? '还没有知识领域' : '暂时无法加载' }}</h2>
+              <p>{{ loading ? '请稍候，正在获取领域信息。' : ready ? '添加领域后，会在这里显示。' : message }}</p>
+              <button v-if="!loading" class="secondary-button" @click="checkConnection">重新加载</button>
+            </div>
+          </div>
+        </section>
 
-    <details id="service-status" ref="serviceDetails" class="service-details">
-      <summary><span class="status-dot" :class="{ online: ready, pending: loading }" aria-hidden="true"></span><span>服务状态</span><span class="status-summary">{{ loading ? '检查中' : ready ? '连接正常' : '连接异常' }}</span><span class="disclosure-arrow" aria-hidden="true">⌄</span></summary>
-      <div class="service-content">
-        <div class="service-heading"><p role="status">{{ message }}</p><button class="secondary-button" :disabled="loading" @click="checkConnection">{{ loading ? '检查中…' : '重新检查' }}</button></div>
-        <dl class="service-list"><div><dt>前端页面</dt><dd>已加载</dd></div><div><dt>业务服务</dt><dd>{{ loading ? '检查中' : healthy ? '已连接' : '未连接' }}</dd></div><div><dt>数据服务</dt><dd>{{ loading ? '检查中' : ready ? '已就绪' : '未就绪' }}</dd></div></dl>
-        <p class="checked-at">最近检查 {{ checkedAt }}</p>
+        <details id="service-status" ref="serviceDetails" class="service-details">
+          <summary><span class="status-dot" :class="{ online: ready, pending: loading }" aria-hidden="true"></span><span>服务状态</span><span class="status-summary">{{ loading ? '检查中' : ready ? '连接正常' : '连接异常' }}</span><span class="disclosure-arrow" aria-hidden="true">⌄</span></summary>
+          <div class="service-content">
+            <div class="service-heading"><p role="status">{{ message }}</p><button class="secondary-button" :disabled="loading" @click="checkConnection">{{ loading ? '检查中…' : '重新检查' }}</button></div>
+            <dl class="service-list"><div><dt>前端页面</dt><dd>已加载</dd></div><div><dt>业务服务</dt><dd>{{ loading ? '检查中' : healthy ? '已连接' : '未连接' }}</dd></div><div><dt>数据服务</dt><dd>{{ loading ? '检查中' : ready ? '已就绪' : '未就绪' }}</dd></div></dl>
+            <p class="checked-at">最近检查 {{ checkedAt }}</p>
+          </div>
+        </details>
+        <footer class="page-footer">知识练习与复习系统</footer>
       </div>
-    </details>
-    <footer class="page-footer"><span>知识练习与复习系统</span><span>开发预览 · 功能持续建设中</span></footer>
-  </main>
+    </main>
+  </div>
 </template>
