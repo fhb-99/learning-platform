@@ -1,0 +1,27 @@
+:root { font-family: Inter, "Microsoft YaHei", sans-serif; color: #153c3b; background: #f2f6f4; font-synthesis: none; }
+* { box-sizing: border-box; }
+body { margin: 0; min-width: 320px; }
+main { max-width: 1020px; margin: 0 auto; padding: 64px 28px 40px; }
+.eyebrow { font-size: 12px; letter-spacing: .12em; color: #57766f; }
+h1 { font-size: clamp(30px, 4.2vw, 48px); line-height: 1.4; letter-spacing: -.03em; margin: 20px 0; }
+header > p { color: #5d7772; margin-bottom: 36px; }
+.panel { background: white; border: 1px solid #d8e5df; border-radius: 18px; padding: 30px; box-shadow: 0 14px 40px #183d3310; }
+.heading { display: flex; justify-content: space-between; align-items: center; gap: 16px; }
+h2 { font-size: 23px; margin: 8px 0 24px; }
+button { font: inherit; border: 0; color: white; background: #226554; padding: 11px 18px; border-radius: 9px; cursor: pointer; }
+button:hover { background: #174f40; }
+button:disabled { opacity: .6; cursor: wait; }
+button:focus-visible { outline: 3px solid #88bbaa; outline-offset: 3px; }
+.checks { display: grid; grid-template-columns: repeat(3, 1fr); gap: 14px; }
+.checks > div { background: #f6f9f7; border: 1px solid #e1eae5; border-radius: 10px; padding: 20px; }
+.checks span, .checks strong, .checks small { display: block; }
+.checks span { font-size: 14px; color: #5d7772; }
+.checks strong { font-size: 24px; color: #8d612d; margin: 10px 0; }
+.checks strong.ok { color: #226554; }
+.checks small { color: #71847e; }
+.message { padding: 16px 0 8px; line-height: 1.7; }
+.domains { display: flex; align-items: center; flex-wrap: wrap; gap: 10px; font-size: 14px; }
+.domains b { background: #e9f2ed; border-radius: 20px; padding: 5px 14px; font-weight: 500; }
+footer { border-top: 1px solid #e7eeea; margin-top: 24px; padding-top: 18px; font-size: 12px; color: #71847e; line-height: 1.8; }
+.next { font-size: 13px; color: #71847e; padding: 10px 0; line-height: 1.8; }
+@media (max-width: 600px) { main { padding: 30px 16px; } .panel { padding: 20px; } .checks { grid-template-columns: 1fr; } .checks > div { padding: 16px; } .checks strong { font-size: 20px; } button { font-size: 14px; } }
