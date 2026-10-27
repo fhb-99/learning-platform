@@ -84,7 +84,7 @@ onMounted(checkConnection)
     <main id="main-content">
       <div class="topbar"><span>学习空间 <span class="breadcrumb-divider">/</span> {{ currentSection.name }}</span><a href="#service-status" @click="serviceDetails && (serviceDetails.open = true)"><span class="status-dot" :class="{ online: ready, pending: loading }" aria-hidden="true"></span>服务状态</a></div>
       <div class="page-content">
-        <header class="page-heading"><p class="eyebrow">学习空间</p><h1>{{ currentSection.name }}</h1><p class="intro">{{ currentSection.intro }}</p></header>
+        <header class="page-heading"><h1>{{ currentSection.name }}</h1><p class="intro">{{ currentSection.intro }}</p></header>
 
         <section class="workspace" :aria-label="currentSection.name + '内容'" :aria-busy="loading">
           <div class="domain-toolbar">
