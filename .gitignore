@@ -1,0 +1,38 @@
+# 本地配置与凭据
+.env
+.env.*
+!.env.example
+!.env.*.example
+*.pem
+*.key
+
+# 前端依赖与产物
+node_modules/
+dist/
+coverage/
+
+# Python 环境与缓存
+.venv/
+venv/
+__pycache__/
+*.py[cod]
+.pytest_cache/
+.mypy_cache/
+.ruff_cache/
+.coverage
+htmlcov/
+*.egg-info/
+
+# 项目内临时产物、日志与分析数据
+/build/
+/out/
+*.log
+*.parquet
+*.duckdb
+*.duckdb.wal
+
+# 编辑器与操作系统文件
+.idea/
+.vscode/
+.DS_Store
+Thumbs.db

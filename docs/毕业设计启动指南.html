@@ -1,0 +1,142 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>毕业设计启动指南｜从一道题走通学习闭环</title>
+<style>
+:root{--ink:#183046;--muted:#586d80;--blue:#175ca5;--teal:#087666;--bg:#f3f6fa;--line:#dbe5ed;--amber:#885b14}*{box-sizing:border-box}html{scroll-behavior:smooth;scroll-padding-top:20px}body{margin:0;background:var(--bg);color:var(--ink);font:16px/1.8 system-ui,-apple-system,"Microsoft YaHei",sans-serif}header{background:linear-gradient(120deg,#102c47,#165b7c);color:white;padding:50px max(24px,calc((100vw - 1140px)/2)) 44px}header small{letter-spacing:.12em;opacity:.8}h1{font-size:clamp(28px,4vw,44px);line-height:1.3;margin:12px 0 16px}header p{max-width:900px;margin:0;color:#e2eef7}.layout{max-width:1190px;margin:auto;padding:24px;display:grid;grid-template-columns:190px minmax(0,1fr);gap:22px}nav{position:sticky;top:20px;align-self:start}nav a{display:block;padding:9px 12px;margin:3px 0;text-decoration:none;border-radius:7px;font-size:14px}nav a:hover,nav a:focus{background:#e1edf8}a{color:var(--blue)}section{background:white;border:1px solid var(--line);border-radius:14px;padding:25px 28px;margin-bottom:19px}h2{font-size:23px;line-height:1.4;margin:0 0 15px}h3{font-size:17px;margin:17px 0 6px}p{margin:8px 0 12px}ul,ol{padding-left:1.35em;margin:9px 0}li{margin:6px 0}.muted,footer{color:var(--muted);font-size:14px}.note{padding:13px 17px;background:#eaf6f1;border-left:4px solid var(--teal);border-radius:5px;margin:14px 0}.pending{background:#fff6e8;border-left-color:var(--amber)}.grid{display:grid;grid-template-columns:1fr 1fr;gap:12px}.card{border:1px solid var(--line);border-radius:9px;padding:15px}.card h3{margin-top:0}.card p{font-size:14px;margin-bottom:0}.label{font-size:12px;padding:3px 8px;border-radius:4px;background:#e7f3ef;color:var(--teal);display:inline-block;margin-bottom:8px}.flow{display:grid;grid-template-columns:repeat(3,1fr);gap:9px;margin:18px 0}.flow div{padding:13px;border:1px solid #cddfed;background:#f1f7fc;border-radius:8px}.flow b{display:block;color:var(--blue);font-size:12px}.flow span{font-size:14px}.scroll{overflow-x:auto}table{border-collapse:collapse;width:100%;font-size:14px;min-width:620px}th,td{text-align:left;vertical-align:top;padding:11px 10px;border-bottom:1px solid var(--line)}th{background:#f0f5f9}details{border-top:1px solid var(--line);padding:12px 0}summary{cursor:pointer;font-weight:650;color:var(--blue)}code{font-family:Consolas,monospace;background:#edf3f8;border-radius:3px;padding:1px 4px;overflow-wrap:anywhere}pre{background:#142d43;color:#eaf4fb;border-radius:8px;padding:16px;font:13px/1.65 Consolas,monospace;white-space:pre-wrap;overflow-wrap:anywhere}.steps{counter-reset:step;list-style:none;padding:0}.steps li{counter-increment:step;border-left:2px solid #d7e4ef;padding:0 0 18px 18px;margin:0}.steps strong:before{content:counter(step) ". ";color:var(--blue)}.steps p{font-size:14px;margin-bottom:0}footer{padding:0 6px 35px}@media(max-width:850px){.layout{display:block;padding:15px}nav{position:static;display:flex;gap:3px;overflow:auto;margin-bottom:14px}nav a{white-space:nowrap}section{padding:21px 18px}}@media(max-width:560px){header{padding:32px 20px}.grid,.flow{grid-template-columns:1fr}h2{font-size:21px}}@media print{nav{display:none}.layout{display:block}section{box-shadow:none;break-inside:avoid}header{background:white;color:#183046}header p{color:#183046}details>*{display:block}}
+</style>
+</head>
+<body>
+<header><small>2026-10-27 · 文档阅读与 GRILLME 启动讨论</small><h1>从一道题，走通学习闭环</h1><p>毕业设计主线：学习行为分析与可解释复习策略。先让一次真实作答形成可靠数据，再用数据解释“下一次为什么复习这道题”。</p></header>
+<div class="layout">
+<nav aria-label="指南导航"><a href="#start">01 从哪里开始</a><a href="#confirmed">02 已确认的边界</a><a href="#first">03 第一份可运行成果</a><a href="#stack">04 技术栈怎么学</a><a href="#sequence">05 开发与实验顺序</a><a href="#evidence">06 论文证据</a><a href="#next">07 下一次开工</a><a href="#sources">08 来源与验证范围</a></nav>
+<main>
+<section id="start"><h2>01 · 第一件事：定义并实现“一道题的完整旅程”</h2>
+<div class="note"><strong>推荐起点：先写一页验收场景，再实现最小的内容发布与客观题练习流程。</strong>从后端题目版本和作答事务起步，通过接口验收后接上 Vue 页面。第一轮就产生后续分析能用的真实记录。</div>
+<div class="flow" aria-label="首次开发流程"><div><b>01 管理员</b><span>发布一道单选题</span></div><div><b>02 学习者</b><span>选择方向并领取题目</span></div><div><b>03 业务后端</b><span>接收回答、规则判分</span></div><div><b>04 数据持久化</b><span>保存作答、成绩与打卡</span></div><div><b>05 复习调度</b><span>生成下次复习日期</span></div><div><b>06 用户反馈</b><span>看到解析、记录和复习安排</span></div></div>
+<p>这条流程同时覆盖前端、接口、权限、数据库和业务规则；后续行为分析需要的“谁、何时、做了哪版题、答得怎样、为何安排复习”也在这里产生。</p>
+<div class="scroll"><table><thead><tr><th>可选起点</th><th>收益</th><th>取舍与建议</th></tr></thead><tbody>
+<tr><td><strong>完整客观题流程</strong></td><td>迅速验证真实业务，形成可分析数据</td><td><strong>推荐。</strong>首轮界面简洁，重点验证数据和规则</td></tr>
+<tr><td>先完成所有页面与后台 CRUD</td><td>界面进展容易展示</td><td>可能迟迟没有完整练习；只做第一条流程必要的页面</td></tr>
+<tr><td>先做 Agent 聊天与生成</td><td>演示效果直观</td><td>尚无可靠题库、成绩和历史可供工具调用，适合后续接入</td></tr>
+<tr><td>先研究公开数据与算法</td><td>较早发现实验数据是否适配</td><td>若导师要求算法创新可提前；当前适合先做小样本可行性检查，再随系统推进</td></tr>
+</tbody></table></div>
+</section>
+<section id="confirmed"><h2>02 · 你已确认的边界</h2><div class="grid">
+<div class="card"><span class="label">本轮确认</span><h3>技术与论文主线</h3><p>暂无额外硬性技术要求，沿用现有文档；学习行为分析与复习策略是主要答辩亮点。时间比较充裕，具体截止日与每周投入尚未量化，因此本指南按里程碑组织。</p></div>
+<div class="card"><span class="label">本轮确认</span><h3>统一每日题，个人复习</h3><p>同一方向、同一本地日期提供同一道题；每个人的完成状态分别记录。个性化先体现在各自的复习队列。</p></div>
+<div class="card"><span class="label">本轮确认</span><h3>提交当天打卡</h3><p>合法回答被后端成功接收即计入提交日打卡。AI 次日才评分或评分失败，都不改变当天打卡；失败不记为零分。</p></div>
+<div class="card"><span class="label">本轮确认</span><h3>可解释的起始复习规则</h3><p>客观题不强制自评。答错或自评“不会”次日复习；连续答对按 1、3、7、14 天递增，并记录调度依据。这是实验起点，效果尚待验证。</p></div>
+</div>
+<p>原设计仍保留：计算机与英语两个领域、用户端与管理端、Agent 答疑／出题／正式评分／规划四项能力、DuckDB + Parquet 分析、发布与回退流程。分阶段实现不等于删去最终范围。</p>
+<p class="muted">本轮澄清补足原设计中每日题唯一性、异步打卡与复习输入的语义。原始两份方案保留；术语集中记录在项目根目录 <a href="../CONTEXT.md">CONTEXT.md</a>。下述实现拆分、样本量及验收步骤是建议，不代表已编码或已通过验证。</p>
+</section>
+<section id="first"><h2>03 · 第一份成果，做到什么程度算完成？</h2>
+<p><strong>演示脚本：</strong>管理员发布一道计算机单选题 → 学习者登录并选择方向 → 领取每日题 → 故意答错 → 看到解析与次日复习安排 → 刷新页面仍保留记录 → 到期后再答一次，形成新的作答记录。</p>
+<div class="grid"><div class="card"><h3>建议只做 4 类页面</h3><p>登录与方向选择、题目编辑发布、今日任务／答题结果、复习列表／作答历史。一个 Vue 项目区分用户布局和管理布局。</p></div><div class="card"><h3>先准备小而可核对的题库</h3><p>建议用自编或授权的 12 道单选题起步，计算机与英语各 6 道，含答案、解析、知识点与来源。此数量只用于开发验收，不能作为算法有效性证据。</p></div></div>
+<details><summary>数据库先设计哪些对象？</summary>
+<div class="scroll"><table><thead><tr><th>对象</th><th>第一轮职责</th><th>关键边界</th></tr></thead><tbody>
+<tr><td>User / TrackPreference</td><td>身份、角色、时区、学习方向</td><td>从登录身份确定用户，不能信任请求中任意 user_id</td></tr>
+<tr><td>Domain / Topic / Track</td><td>内容归类与适用方向</td><td>方向与知识分类含义不同，关联关系明确表达</td></tr>
+<tr><td>Question / QuestionVersion</td><td>题目和发布快照</td><td>作答引用不可变版本，后续编辑不改变旧成绩依据</td></tr>
+<tr><td>每日题定义 + 个人完成记录</td><td>分别表达统一选题和个人进度</td><td>建议方向／本地日期唯一的题目定义；用户／每日题唯一的个人记录</td></tr>
+<tr><td>Attempt / Grade</td><td>原始回答、规则分数、评分版本</td><td>新练习追加记录；同一请求重试返回原结果</td></tr>
+<tr><td>CheckIn / ReviewPlan</td><td>提交日打卡、个人下次复习</td><td>打卡按用户／日期唯一；计划按用户／题目维护</td></tr>
+<tr><td>LearningEvent 或等价业务记录</td><td>为分析保留可追踪事实</td><td>与作答关联并去重；第一轮无需建设独立事件平台</td></tr>
+</tbody></table></div>
+<p>这是逻辑对象列表，不要求机械地“一行建一张表”。具体字段与迁移在开工时围绕验收场景确定。</p>
+</details>
+<details><summary>最先写的接口与事务</summary>
+<p>先完成登录鉴权，再依次实现原文已有的发布、领取、提交接口；补充读取复习列表与作答历史的接口。读题接口只返回作答所需信息，答案与解析在允许查看结果时返回。</p>
+<pre>POST /api/v1/admin/questions/{id}/publish
+GET  /api/v1/today?track_id=...
+POST /api/v1/attempts
+
+提交时：校验身份、题目版本与幂等键
+    → 在同一 MySQL 事务内保存作答、规则成绩、打卡和复习安排
+    → 提交成功后返回结果
+    → 同一幂等键重试，返回已有提交
+
+建议幂等约束：用户 + 幂等键唯一
+建议冲突处理：同一键携带不同回答时拒绝覆盖原记录</pre>
+<p>网络模型调用不应放进上述数据库事务。主观题阶段再增加持久评分任务与独立 worker。</p>
+</details>
+<h3>第一轮必须验证的 6 件事</h3><ol>
+<li><strong>版本：</strong>题目发布新版后，旧作答仍能展示当时题干与评分依据。</li>
+<li><strong>幂等：</strong>同一次提交连续点击或网络重试，只新增一次作答和一次调度；用户主动再次练习可产生新作答。</li>
+<li><strong>事务：</strong>提交中途失败，不留下“有成绩但没有对应复习安排”的半成品。</li>
+<li><strong>权限：</strong>普通用户不能发布题目，也不能读取另一用户的作答。</li>
+<li><strong>日期：</strong>默认 Asia/Singapore，本地午夜边界前后提交归属不同日期，同日多次提交只算一天打卡。</li>
+<li><strong>复习：</strong>用固定测试时钟验证答错、自评不会、连续答对及到期领取，逐项比对预期日期。</li>
+</ol><p class="muted">不必等真实时间过去一天再验证日期逻辑。固定测试时间可以重复检查；浏览器再验证实际操作流程。</p>
+</section>
+<section id="stack"><h2>04 · 技术栈按任务学，学到能交付就继续</h2>
+<div class="scroll"><table><thead><tr><th>顺序与技术</th><th>先掌握的内容</th><th>学习完成的标志</th></tr></thead><tbody>
+<tr><td>① Python → FastAPI</td><td>类型、虚拟环境、异常；路由、请求／响应模型、依赖注入、鉴权与接口测试</td><td>能用 OpenAPI 界面完成读题、提交、查看结果；非法输入被拒绝</td></tr>
+<tr><td>② MySQL / InnoDB</td><td>主外键、唯一约束、索引、事务、版本化迁移</td><td>重试与并发提交不产生重复记录；空库可通过迁移建表</td></tr>
+<tr><td>③ Vue 3 + TypeScript</td><td>组件、响应式、表单、异步请求、路由；Pinia 管理共享登录状态</td><td>用户完成上述演示脚本；刷新后从后端恢复业务数据</td></tr>
+<tr><td>④ DuckDB + Parquet</td><td>导出、去重、日期分区、SQL 聚合、结果核对</td><td>某日作答量与正确率能逐条追溯到业务记录</td></tr>
+<tr><td>⑤ Agent 与评分 worker</td><td>检索、结构化输出、工具授权、持久任务、重试、审计</td><td>评分有逐点依据；断网／重启后任务状态可靠，恢复不会重复记分</td></tr>
+<tr><td>⑥ Nginx / CI/CD</td><td>前端构建、后端测试、迁移检查、同一产物发布、备份与回退</td><td>指定版本可部署并验证，失败能按已演练流程恢复</td></tr>
+</tbody></table></div>
+<p>前三项围绕同一条业务流程交替学习。无需先学完所有框架，再开始项目。ORM、迁移工具、UI 组件库、模型服务商和依赖版本还未锁定，开工时做一次兼容性检查即可。</p>
+<details><summary>官方资料从哪里读？</summary><ul>
+<li><a href="https://fastapi.tiangolo.com/tutorial/">FastAPI 官方教程</a>：从 First Steps、Request Body、Response Model、Dependencies 与 Security 开始，再读 SQL 与 Testing。</li>
+<li><a href="https://dev.mysql.com/doc/refman/8.4/en/innodb-transaction-model.html">MySQL InnoDB 事务模型</a>：用于理解提交、回滚、隔离与并发边界；项目具体 MySQL 版本仍需锁定。</li>
+<li><a href="https://vuejs.org/guide/quick-start.html">Vue 官方快速开始</a>：按官方项目脚手架路线进入，再学习表单、组件和 TypeScript；实现时核对所需 Node 版本。</li>
+<li><a href="https://duckdb.org/docs/2.0/data/parquet/overview">DuckDB 官方 Parquet 文档</a>：可直接查询 Parquet，并从 SQL 结果导出 Parquet；先用自己的小样本练习。</li>
+<li><a href="https://fastapi.tiangolo.com/tutorial/background-tasks/">FastAPI Background Tasks</a>：理解请求返回后的任务执行方式；本项目正式评分另有持久化、重试和独立 worker 要求，不能只靠一个进程内回调完成。</li>
+</ul></details>
+</section>
+<section id="sequence"><h2>05 · 按可验收成果推进</h2>
+<ol class="steps">
+<li><strong>启动：验收脚本、数据样例、仓库边界</strong><p>把第一条业务流程与预期结果写清楚；准备两个领域的样题；确认项目独立仓库和开发环境。此时即可列出论文的问题、拟比较策略和需要记录的数据。</p></li>
+<li><strong>基础：发布 → 作答 → 打卡 → 复习</strong><p>交付第 03 节的可运行成果。保留题目版本、作答时间、成绩、调度输入和规则版本。开始最小构建与测试检查。</p></li>
+<li><strong>主线：行为分析与规则复习</strong><p>先从小样本导出 Parquet，核对作答量、正确率、复习到期量；DuckDB 聚合结果写回供看板读取，并显示统计截止时间。定义正确率等指标的分母，待评分题不得算作错误。</p></li>
+<li><strong>扩展：Agent 四项能力</strong><p>建议按题库检索答疑 → 生成待审核草稿 → 持久化正式评分 → 根据已验证指标生成计划接入。正式评分预先做小型可行性验证；完整接入后验证申诉、更正、任务重试与工具撤销。</p></li>
+<li><strong>验证：对照实验与真实试用</strong><p>论文实验协议前置设计，等数据积累后执行。对照固定间隔策略与当前规则策略；公开数据处理实验和本站真实试用分别记录。对 AI 评分另用人工标注集比较误差与争议。</p></li>
+<li><strong>交付：部署、恢复演练与答辩演示</strong><p>依照现有发布方案推进 CI 产物、手动触发 CD、迁移与备份恢复。演示版绑定明确提交版本，并准备无模型密钥或模型不可用时的降级展示。</p></li>
+</ol>
+<div class="note">时间充裕的收益应体现为：更可靠的数据、更清楚的实验和真实试用。当前没有要求增加 Spark、缓存、微服务或在线编程判题。</div>
+</section>
+<section id="evidence"><h2>06 · 让“学习行为分析”成为可证明的亮点</h2>
+<p><strong>建议研究问题：</strong>根据历史表现调整复习安排，是否比固定间隔安排更适合用户完成复习，并在延迟测验中维持答题表现？这是待检验的问题，不能预写“显著提升学习效果”。</p>
+<div class="scroll"><table><thead><tr><th>要证明什么</th><th>怎么取证</th><th>结论边界</th></tr></thead><tbody>
+<tr><td>系统记录与计算正确</td><td>选定日期，核对原始作答、去重结果和聚合报表；保留统计截止时间</td><td>证明数据处理正确，不证明学习效果提高</td></tr>
+<tr><td>规则可解释、可复现</td><td>同一输入与规则版本得到同一计划；页面能解释为什么到期</td><td>证明调度行为一致，不代表符合真实记忆曲线</td></tr>
+<tr><td>策略可能更有效</td><td>预先约定分组、时长、延迟测验与指标，报告样本量、缺失和不确定性</td><td>仅比较使用前后分数不能排除题目难度与重复练习影响</td></tr>
+<tr><td>能够处理较大数据</td><td>合法公开数据集单独实验，记录行数、硬件、分区、耗时、内存和重复运行</td><td>处理吞吐不等于推荐质量；英语数据结果不能直接推广到计算机知识</td></tr>
+<tr><td>AI 评分可评估</td><td>固定题目 rubric、人工标注、模型／提示词版本，统计误差与争议样例</td><td>小样本一致性不能保证所有开放题正确</td></tr>
+</tbody></table></div>
+<details><summary>第一天就应保留哪些实验输入？</summary><p>匿名用户标识、题目与版本、领域／知识点、提交时间及当时本地日期、正式分数及评分状态、可选自评、是否复习、原到期时间、实际完成时间、调度前后阶段、规则版本与触发作答。分析导出尽量使用必要字段，原始主观答案不默认进入通用事件日志。</p><p>若后来加入推荐排序，先定义推荐候选集、目标与按时间划分的评估方式，再决定是否使用命中率等指标。单纯“下一次复习日期”的策略，不能随意套用 Top-K 推荐指标。历史记录也无法直接给出用户接受另一种复习策略后会发生什么。</p></details>
+</section>
+<section id="next"><h2>07 · 下一次真正开工时，按这个顺序</h2><ol>
+<li><strong>明确独立仓库：</strong>2026-10-27 已在本项目创建独立 <code>.git</code>，远程为 <code>fhb-99/learning-platform</code>。后续操作仍先核对仓库根目录；从最新 <code>origin/main</code> 创建功能分支。</li>
+<li><strong>写第一个验收用例与样题：</strong>从“TCP 单选题答错后明日复习”开始，再用英语题走同一流程，检查领域模型是否通用。</li>
+<li><strong>补齐日期和调度边界：</strong>编码前确定复习到期时间、14 天后的封顶规则、同日重复练习是否推进阶段、题目新版与旧复习计划的关系。它们不改变目前的推荐起点，但不能在实现中默默猜测。</li>
+<li><strong>创建最小项目骨架与迁移：</strong>前端、后端、测试和文档各归其位。先验证 MySQL 读写、发布接口、作答事务，再接页面。</li>
+<li><strong>验证完整操作：</strong>用普通用户与管理员分别检查权限和持久数据，再扩展分析。主观题接入前另定迟到评分、申诉改分与较新复习计划的覆盖规则。</li>
+</ol>
+<details><summary>建议目录形态（尚未创建）</summary><pre>learning-platform/
+  CONTEXT.md           业务术语
+  frontend/            Vue 用户端与管理端
+  backend/
+    app/               按业务模块组织 FastAPI
+    migrations/        数据库迁移
+    tests/             权限、事务、日期与调度测试
+  tools/               可复用导出和分析工具
+  docs/                中文阅读、设计与交付资料
+  build/               被忽略的临时数据与实验产物
+  .github/workflows/   后续构建与发布检查</pre></details>
+<p class="muted">启动讨论交付了建议与已确认规则；后续已建立独立仓库，详见根目录 README 与 AGENTS.md。尚未安装依赖、创建数据库、编写业务代码或执行上线操作。</p>
+</section>
+<section id="sources"><h2>08 · 阅读来源与验证范围</h2><ul>
+<li><a href="个性化知识练习与复习系统_技术设计文档.html">系统技术设计文档</a>：已完整阅读。核心依据是 <a href="个性化知识练习与复习系统_技术设计文档.html#arch">第 3 节技术栈</a>、<a href="个性化知识练习与复习系统_技术设计文档.html#scenes">第 2 节业务规则</a>、<a href="个性化知识练习与复习系统_技术设计文档.html#delivery">第 8 节实施范围</a>。</li>
+<li><a href="部署与交付/发布与CI-CD工作流方案.html">发布与 CI/CD 工作流方案</a>：已完整阅读；自动 CI 与手动触发 CD 属于后续交付路线。</li>
+<li>GrillMe 流程用于查找规则缺口、提出推荐选项与确认边界；本轮六项回答已反映到指南。后续具体实现决策仍需围绕首个用例收敛。</li>
+<li>官方技术资料已核查并在第 04 节就近链接；未核查现有服务器、模型账户、DNS、具体运行时兼容性或公开数据集许可。本指南不将原方案中的部署设想当作已完成事实。</li>
+</ul></section>
+<footer>阅读提示：先看 01、03、07 即可开始准备；04 用于边做边学，06 用于同步积累论文证据。所有成果保存在本项目内。</footer>
+</main></div></body></html>

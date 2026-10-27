@@ -1,0 +1,142 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>学习系统发布与 CI/CD 工作流方案</title>
+  <style>
+    :root { --bg:#f3f6fb; --paper:#fff; --ink:#172b42; --muted:#5b6d7e; --line:#dce5ee; --blue:#155ba5; --teal:#087a69; --amber:#9b6100; }
+    * { box-sizing:border-box; }
+    html { scroll-behavior:smooth; }
+    body { margin:0; color:var(--ink); background:var(--bg); font:15px/1.72 system-ui,-apple-system,"Microsoft YaHei",sans-serif; }
+    header { padding:52px max(22px,calc((100vw - 1100px)/2)) 42px; color:white; background:linear-gradient(125deg,#102c4b,#195d8b 65%,#087a69); }
+    header small { letter-spacing:.12em; opacity:.82; }
+    h1 { max-width:900px; margin:9px 0 11px; font-size:clamp(28px,4vw,42px); line-height:1.2; }
+    header p { max-width:850px; margin:0; font-size:16px; opacity:.93; }
+    main { max-width:1100px; margin:auto; padding:22px 20px 68px; }
+    nav { display:flex; flex-wrap:wrap; gap:8px; margin-bottom:17px; }
+    nav a { display:inline-block; padding:6px 11px; border:1px solid var(--line); border-radius:99px; background:white; font-size:13px; text-decoration:none; }
+    section { margin:16px 0; padding:24px 28px; border:1px solid var(--line); border-radius:14px; background:var(--paper); box-shadow:0 5px 18px #16375908; }
+    h2 { margin:0 0 12px; font-size:22px; }
+    h3 { margin:16px 0 6px; font-size:17px; }
+    p { margin:7px 0 11px; }
+    ul,ol { margin:8px 0 12px; padding-left:1.35em; }
+    li { margin:5px 0; }
+    a { color:var(--blue); }
+    .callout { margin:12px 0; padding:14px 17px; border-left:4px solid var(--blue); border-radius:7px; background:#ecf4fd; }
+    .warn { border-left-color:var(--amber); background:#fff6e7; }
+    .good { border-left-color:var(--teal); background:#eaf8f2; }
+    .muted { color:var(--muted); }
+    .tag { display:inline-block; padding:1px 7px; margin-right:5px; border-radius:5px; color:var(--teal); background:#e4f5ee; font-size:12px; font-weight:700; }
+    .flow { display:flex; align-items:stretch; gap:6px; overflow-x:auto; padding:5px 0 12px; }
+    .flow span { flex:1; min-width:122px; padding:11px 8px; border:1px solid #c7dcec; border-radius:9px; background:#f0f7fe; text-align:center; font-size:13px; font-weight:700; }
+    .flow b { align-self:center; color:var(--blue); font-size:20px; }
+    .table-wrap { overflow-x:auto; }
+    table { width:100%; min-width:760px; border-collapse:collapse; font-size:13.5px; }
+    th,td { padding:10px 11px; border-bottom:1px solid var(--line); text-align:left; vertical-align:top; }
+    th { background:#f1f5fa; }
+    tr:last-child td { border-bottom:0; }
+    details { padding:10px 0; border-top:1px solid var(--line); }
+    summary { cursor:pointer; color:#23517f; font-weight:700; }
+    code { padding:1px 5px; border-radius:4px; background:#edf3f8; font-family:Consolas,monospace; font-size:.93em; }
+    .grid { display:grid; grid-template-columns:repeat(2,minmax(0,1fr)); gap:12px; }
+    .grid>div { padding:13px 15px; border:1px solid var(--line); border-radius:9px; background:#fbfdff; }
+    .grid h3 { margin:0 0 4px; }
+    .foot { font-size:12.5px; color:var(--muted); }
+    @media(max-width:700px) { header { padding:34px 19px; } main { padding:14px 10px 45px; } section { padding:19px 16px; } .grid { grid-template-columns:1fr; } .flow { flex-direction:column; } .flow span { min-width:0; } .flow b { transform:rotate(90deg); line-height:10px; } }
+  </style>
+</head>
+<body>
+  <header>
+    <small>2026-10-23 · 方案讨论稿 · 尚未实施</small>
+    <h1>学习系统如何从本地代码发布到线上？</h1>
+    <p>针对 Vue 3 + FastAPI + MySQL 的单人毕设，比较手动发布与 GitHub CI/CD，并给出一条适合现有博客、SyncRTC 共用服务器的实施路线。</p>
+  </header>
+  <main>
+    <nav aria-label="本页导航">
+      <a href="#decision">推荐结论</a><a href="#compare">方案比较</a><a href="#reference">现有项目</a><a href="#pipeline">发布流程</a><a href="#package">构建与打包</a><a href="#server">服务器准备</a><a href="#rollback">迁移与回退</a><a href="#phases">实施顺序</a>
+    </nav>
+
+    <section id="decision">
+      <h2>推荐结论</h2>
+      <div class="callout good"><strong>首版采用“自动 CI + 手动触发 CD + 自动部署脚本”。</strong>本地只负责开发和测试；GitHub Actions 在合入 <code>main</code> 后构建、测试、生成带提交 SHA 的发布包。你确认要上线时，在 GitHub 点击部署；CD 下载刚才通过 CI 的同一份产物，经受限 SSH 账号上传并执行服务器发布脚本。</div>
+      <p>这仍然是 CI/CD：检查、打包、上传、替换、健康检查和失败回退都由流水线执行，人工只决定<strong>何时将哪一个已验证版本发布到生产</strong>。系统稳定并演练过回退后，可以把 CD 改为“<code>main</code> 的 CI 成功即自动发布”。</p>
+      <div class="flow" aria-label="推荐发布链路"><span>本地功能分支</span><b>→</b><span>PR 自动 CI</span><b>→</b><span>合入 main</span><b>→</b><span>CI 产物</span><b>→</b><span>手动触发 CD</span><b>→</b><span>线上验证</span></div>
+      <p class="muted">2026-10-27 已建立独立 Git 仓库，采用 main + 功能分支；GitHub Actions 与自动发布仍待实施。</p>
+    </section>
+
+    <section id="compare">
+      <h2>四种做法怎么选</h2>
+      <div class="table-wrap"><table><thead><tr><th>做法</th><th>适合场景</th><th>主要代价</th><th>本项目判断</th></tr></thead><tbody>
+        <tr><td>本地构建后 SCP 上传</td><td>首次部署、临时演示</td><td>依赖本机环境；漏传文件、传错版本或误覆盖较难追溯</td><td>只作首次联调或应急路径</td></tr>
+        <tr><td>服务器 <code>git pull</code> 后现场构建</td><td>很小的个人原型</td><td>生产服务器要装构建工具；构建结果依赖当时的网络和环境，也难保证与 CI 验证的是同一产物</td><td>不作为正式发布方式</td></tr>
+        <tr><td><strong>GitHub CI 产物 + 手动 CD</strong></td><td>单人毕设、共用服务器</td><td>需要一次性配置 Actions、受限 SSH 账号和发布脚本</td><td><span class="tag">推荐首版</span>可追溯，且上线时间由你控制</td></tr>
+        <tr><td>GitHub CI 成功后自动 CD</td><td>流程成熟、变更频繁</td><td>合入 <code>main</code> 就可能立即碰到真实数据库和线上用户</td><td>回退和迁移规则演练后再启用</td></tr>
+        <tr><td>Docker 镜像 + Compose</td><td>需要镜像化复现、已有容器运维习惯</td><td>增加镜像仓库、容器网络和数据卷管理；还需与现有 Nginx/服务协调</td><td>可扩展选项，首版无须引入</td></tr>
+      </tbody></table></div>
+    </section>
+
+    <section id="reference">
+      <h2>与现有博客、SyncRTC 的关系</h2>
+      <div class="grid">
+        <div><h3>博客</h3><p>GitHub <code>main</code> 上的 <a href="https://github.com/fhb-99/My-Website/blob/main/.github/workflows/blog-ci.yml">Blog CI</a> 测试并构建两个 Vue 前端，打包发布产物；<a href="https://github.com/fhb-99/My-Website/blob/main/.github/workflows/blog-deploy.yml">Blog CD</a> 在 CI 成功后下载对应产物，通过 SSH 发布并做公网只读检查。这个“同一产物贯穿 CI/CD”的做法可以借鉴。</p></div>
+        <div><h3>SyncRTC</h3><p><a href="https://github.com/fhb-99/syncRTC/blob/main/.github/workflows/syncrtc-ci.yml">SyncRTC CI</a> 将 C++ 服务构建、测试并打包；<a href="https://github.com/fhb-99/syncRTC/blob/main/.github/workflows/syncrtc-deploy.yml">CD</a> 接收 CI 产物，也提供手动触发入口。学习系统后端是 Python，通常不需像 C++ 那样编译为 ELF，但仍需锁定依赖、测试和制作发布包。</p></div>
+      </div>
+      <p class="muted">以上描述依据仓库工作流文件，不代表已检查今天服务器上的实际部署状态。新项目与它们独立建库、目录和服务，不能复用博客或 SyncRTC 的发布脚本。</p>
+    </section>
+
+    <section id="pipeline">
+      <h2>推荐的 GitHub 工作流</h2>
+      <ol>
+        <li><strong>开发：</strong>在独立仓库的 <code>feat/*</code> 分支写代码，PR 指向 <code>main</code>。单人新项目先用 <code>main</code> + 功能分支即可；若以后建立长期 <code>develop</code>，再按对应分支规则发布。</li>
+        <li><strong>PR CI：</strong>安装锁定依赖；运行前端类型检查、构建，以及后端测试；用临时 MySQL 检查迁移和关键接口。PR 任务不持有生产 SSH 密钥。</li>
+        <li><strong><code>main</code> CI：</strong>对准确的 commit SHA 重跑门禁并制作发布包，写入 SHA、构建状态、依赖版本和 SHA-256 校验值，上传为 GitHub Actions artifact。</li>
+        <li><strong>手动 CD：</strong>指定已通过 CI 的提交/运行记录；只下载这个运行生成的产物，核对来源与校验和，拒绝 PR 产物或 SHA 不一致的包。生产部署同一时刻只允许一个任务执行。</li>
+        <li><strong>服务器发布：</strong>上传到临时目录，备份受影响数据，执行已审核的数据库迁移，将新版本放到独立 release 目录，切换当前版本，重启 FastAPI 和评分 worker。</li>
+        <li><strong>验收：</strong>检查本机 <code>/api/health</code>、公网用户端和管理端、登录权限、关键只读接口及服务日志；失败则切回上一版应用代码并保留排障证据。</li>
+      </ol>
+      <p class="foot">GitHub 官方文档确认：<a href="https://docs.github.com/en/actions/concepts/workflows-and-actions/workflow-artifacts">artifact 可保存构建产物</a>；<a href="https://docs.github.com/en/actions/concepts/workflows-and-actions/deployment-environments">Environment 可限制生产部署</a>。若未来改用 <code>workflow_run</code> 自动触发，要额外核对触发来源，因为后续工作流可接触生产密钥；见 <a href="https://docs.github.com/en/actions/reference/workflows-and-actions/events-that-trigger-workflows#workflow_run">GitHub 的安全说明</a>。</p>
+    </section>
+
+    <section id="package">
+      <h2>“编译打包”对各组件意味着什么</h2>
+      <div class="table-wrap"><table><thead><tr><th>组件</th><th>CI 做什么</th><th>服务器收到什么</th></tr></thead><tbody>
+        <tr><td>Vue 用户端/管理端</td><td><code>npm ci</code>、类型检查、测试、<code>vite build</code></td><td>静态 <code>dist/</code> 文件，由 Nginx 服务；不需要服务器再装 Node.js 构建。<a href="https://vite.dev/guide/build">Vite 构建说明</a></td></tr>
+        <tr><td>FastAPI API 与评分 worker</td><td>安装固定版本依赖、测试、打包 Python 源码和依赖清单</td><td>按发布版本建立独立 Python 虚拟环境并启动 systemd 服务；无需把源码“编译成 Go/C++ 那样的二进制”</td></tr>
+        <tr><td>MySQL 表结构</td><td>在临时库验证迁移能从上一结构升级</td><td>版本化迁移文件；生产数据本身不进入发布包，生产执行迁移前先备份</td></tr>
+        <tr><td>DuckDB/Parquet 分析</td><td>测试清洗与聚合脚本，使用小样本核对结果</td><td>分析脚本随版本发布；真实 Parquet 数据放独立数据目录，不随代码覆盖</td></tr>
+        <tr><td>模型 API key、数据库密码</td><td>只在测试中使用替身或测试密钥</td><td>保存在服务器受限环境配置；绝不进入前端包、Git 仓库或发布 artifact</td></tr>
+      </tbody></table></div>
+      <p>首次实现可以让 CD 在服务器上依据锁定的依赖文件创建新版本的虚拟环境。若将来遇到网络或原生依赖导致发布不稳定，再升级为 CI 产出与服务器系统兼容的 Python wheel 包；目前无需先引入镜像仓库。</p>
+    </section>
+
+    <section id="server">
+      <h2>一次性准备与日常发布分开</h2>
+      <div class="grid">
+        <div><h3>首次准备，人工完成并记录</h3><p>检查服务器 CPU、内存、磁盘和端口；配置 <code>learn.gentleyun.cn</code> 的 DNS、HTTPS 与独立 Nginx 虚拟主机；创建独立 MySQL 库/账户；准备部署目录、备份目录、受限 SSH 账号，以及 API、worker 的 systemd 服务。确认博客和 SyncRTC 的既有端口后再分配新端口。</p></div>
+        <div><h3>日常发布，由 CD 重复执行</h3><p>下载/校验产物 → 上传暂存 → 备份/迁移 → 安装版本 → 切换服务 → 健康检查。Nginx、数据库账号、长期密钥不随每次功能发布重建；模型密钥和数据库密码由服务器保管，GitHub 只保存部署所需的受限 SSH 凭据。</p></div>
+      </div>
+      <div class="callout">建议目录形态：<code>/opt/learning-platform/releases/&lt;commit-sha&gt;/</code> 放不可变代码与前端产物；<code>/opt/learning-platform/current</code> 指向当前版；用户数据、Parquet 和备份放在 release 目录之外。名称仅为方案，部署前需按服务器实际布局确认。</div>
+    </section>
+
+    <section id="rollback">
+      <h2>最容易被忽略的部分：数据库与回退</h2>
+      <details open><summary>代码回退可以快；数据库回退不一定可以</summary><p>前端与 FastAPI 可保留上一版 release，失败时切回旧目录并重启。MySQL 迁移可能已经改写数据，不能假设切回旧代码就自动恢复数据库。首版迁移尽量向后兼容：先新增列/表，代码兼容新旧结构，确认稳定后再另一次发布中清理旧列。破坏性迁移需要停机窗口和经验证的备份恢复步骤。</p></details>
+      <details><summary>AI 评分任务与数据属于持久状态</summary><p>发布或重启 worker 时，未完成的评分任务保留在 MySQL；任务带状态、尝试次数与幂等键，重试不能重复写正式成绩。部署失败不能用旧发布包覆盖新产生的答题记录。</p></details>
+      <details><summary>建议的发布失败判定</summary><p>依赖安装失败、迁移检查失败、systemd 服务未就绪、<code>/api/health</code> 失败、前端资源 404 或权限检查异常，均应停止发布并发出失败状态。自动回退仅覆盖代码/静态资源；涉及已执行的不可逆迁移时，先保持现场并由人决定恢复数据。</p></details>
+    </section>
+
+    <section id="phases">
+      <h2>按毕设进度实施</h2>
+      <ol>
+        <li><strong>开发前期：</strong>本机 Vue + FastAPI + MySQL 跑通题目、答题和打卡；建立最小 CI，先验证构建与测试。</li>
+        <li><strong>首次上线：</strong>人工准备服务器和子域名，用受控脚本完成首发；记录完整命令与回退点。</li>
+        <li><strong>稳定后：</strong>加入手动触发 CD，发布同一份 CI 产物；练习一次“前端/API 发布失败 → 代码回退”。</li>
+        <li><strong>答辩前：</strong>以一个明确提交 SHA 发布演示版并冻结；报告真实线上 URL、版本、健康检查和功能演示证据。</li>
+      </ol>
+      <div class="callout warn"><strong>暂不默认自动上线：</strong>生产 MySQL 迁移、AI 评分任务和与博客共用的服务器使“每次合入立即部署”多了一层实际影响。等发布、备份、回退都跑通过，再把手动 CD 改为自动。</div>
+      <p class="foot">关联文档：<a href="../个性化知识练习与复习系统_技术设计文档.html">系统技术设计文档</a>。本页维护发布工作流方案；独立仓库已于 2026-10-27 建立，GitHub Actions、服务器服务与线上部署仍未实施。</p>
+    </section>
+  </main>
+</body>
+</html>
