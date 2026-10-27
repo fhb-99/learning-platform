@@ -1,18 +1,22 @@
 from contextlib import asynccontextmanager
+from datetime import datetime, timezone
 from typing import Literal
 
 from fastapi import FastAPI, Request
+from fastapi.exceptions import RequestValidationError
 from fastapi.responses import JSONResponse
 from pydantic import BaseModel, ConfigDict
 from sqlalchemy import select, text
 from sqlalchemy.engine import Engine
 from sqlalchemy.exc import SQLAlchemyError
 
+from app.auth import router as auth_router
 from app.config import Settings
 from app.database import create_db_engine
 from app.models import Domain
+from app.practice import router as practice_router
 
-SCHEMA_REVISION = "0001_domains"
+SCHEMA_REVISION = "0002_daily_practice"
 
 
 class Readiness(BaseModel):
@@ -34,6 +38,7 @@ def create_app(engine: Engine | None = None) -> FastAPI:
         # 测试可注入连接引擎，正式运行只读取后端配置，退出时释放连接池。
         db_engine = engine or create_db_engine(Settings().database_url.get_secret_value())
         app.state.db_engine = db_engine
+        app.state.cookie_secure = Settings().cookie_secure if engine is None else False
         try:
             yield
         finally:
@@ -41,6 +46,25 @@ def create_app(engine: Engine | None = None) -> FastAPI:
                 db_engine.dispose()
 
     app = FastAPI(title="知识练习与复习系统", version="0.1.0", lifespan=lifespan)
+    # MySQL DateTime 统一保存无时区 UTC；业务日期按用户时区单独计算。
+    app.state.clock = lambda: datetime.now(timezone.utc).replace(tzinfo=None)
+    app.include_router(auth_router)
+    app.include_router(practice_router)
+
+    @app.exception_handler(RequestValidationError)
+    async def invalid_request(request: Request, error: RequestValidationError):
+        # 不回显请求原文，尤其不能在认证校验错误中返回密码。
+        return JSONResponse(status_code=422, content={"detail": "填写内容不符合要求，请检查后重试"})
+
+    @app.middleware("http")
+    async def private_responses(request: Request, call_next):
+        response = await call_next(request)
+        response.headers["Cache-Control"] = "no-store"
+        return response
+
+    @app.exception_handler(SQLAlchemyError)
+    async def database_error(request: Request, error: SQLAlchemyError):
+        return JSONResponse(status_code=503, content={"detail": "数据服务暂不可用，请稍后重试"})
 
     @app.get("/api/health")
     def health():

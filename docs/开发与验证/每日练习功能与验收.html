@@ -1,0 +1,53 @@
+<!doctype html>
+<html lang="zh-CN"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>每日练习功能与验收</title><style>
+body{margin:0;background:#f5f7f2;color:#35433e;font:15px/1.85 system-ui,"Microsoft YaHei",sans-serif}main{max-width:1000px;margin:auto;padding:32px 24px}h1{font-size:30px}h2{font-size:22px}section{background:#fff;border:1px solid #e5eadf;border-radius:18px;padding:24px;margin:20px 0}a{color:#426b4d}nav{display:flex;gap:18px;flex-wrap:wrap}table{border-collapse:collapse;width:100%}th,td{text-align:left;vertical-align:top;padding:12px;border-bottom:1px solid #e8ecdf}pre{white-space:pre-wrap;overflow-wrap:anywhere;background:#eff3e9;padding:18px;border-radius:12px;font:13px/1.8 Consolas,monospace}code{overflow-wrap:anywhere}.muted{color:#71806d}.flow{display:flex;flex-wrap:wrap;gap:10px}.flow span{padding:10px 14px;background:#edf3e7;border-radius:12px}summary{cursor:pointer;font-weight:600}li{margin:6px 0}@media(max-width:600px){main{padding:20px 12px}section{padding:18px}table{font-size:12px}}
+</style></head><body><main>
+<h1>每日练习功能与验收</h1><p class="muted">2026-10-27 · 首版单选题流程 · 当前为本地开发能力，尚未部署</p>
+<nav><a href="#use">开始使用</a><a href="#rules">业务规则</a><a href="#api">接口与数据</a><a href="#test">验收证据</a><a href="#limits">当前边界</a></nav>
+<section id="use"><h2>从登录到答题结果</h2><div class="flow"><span>创建账号 / 登录</span><span>选择领域与学习方向</span><span>领取每日题</span><span>单选并提交</span><span>成绩、解析、打卡与复习日期</span></div>
+<p>打开 <a href="http://127.0.0.1:5173/">本地学习空间</a>，左侧进入“每日练习”。用户名使用 3–32 位小写字母、数字或下划线并以字母开头；密码为 10–128 个字符。注册成功后自动登录。系统不提供固定默认账号。</p>
+<p>计算机领域目前包含“计算机基础”方向，英语领域包含“英语词汇”方向，每个方向 6 道自编单选样题。它们用于联调与验收，不能用这 12 道样题证明复习策略有效。</p>
+<details open><summary>开发库升级与样题导入</summary><pre># 在项目根目录启动 Docker 数据库
+./backend/.venv/Scripts/python.exe tools/dev_mysql.py start
+Set-Location backend
+./.venv/Scripts/python.exe -m pip install -r requirements.txt
+./.venv/Scripts/python.exe -m alembic upgrade head
+./.venv/Scripts/python.exe -m app.seed
+./.venv/Scripts/python.exe -m alembic check
+./.venv/Scripts/python.exe -m uvicorn app.main:app --reload --host 127.0.0.1 --port 8000</pre><p>在另一个终端，从项目根目录运行 <code>npm --prefix frontend run dev</code>。已运行的非 reload 后端需要重新启动才能加载新接口。迁移只建表；样题通过显式命令导入，可以重复执行，不覆盖任何已发布样题。</p></details>
+</section>
+<section id="rules"><h2>已经落实的业务约束</h2><table><tr><th>规则</th><th>实现</th></tr>
+<tr><td>统一每日题</td><td>学习方向 + 用户本地日期唯一；首次领取时从已发布候选版本确定并保存，之后所有同方向同日期用户读取相同版本。方向与领域分别建模。</td></tr>
+<tr><td>用户身份</td><td>服务端从会话 Cookie 确定用户；接口拒绝额外传入 user_id。作答结果查询只允许本人读取。</td></tr>
+<tr><td>答案与版本</td><td>提交前只返回题干、选项和来源，答案与解析仅在本人提交后返回。每日题引用固定发布版本，发布新版不会修改旧作答依据。</td></tr>
+<tr><td>提交事务</td><td>同一 MySQL 事务写入作答、规则分数、提交日打卡与复习计划。发生异常整体回滚；每日题每个用户只允许首次正式提交。</td></tr>
+<tr><td>幂等与并发</td><td>用户 + UUID 幂等键唯一；同键同内容重试返回原结果，同键不同内容返回 409；用户 + 每日题唯一。通过用户行锁串行化同一用户的提交，不锁住其他用户。</td></tr>
+<tr><td>跨天</td><td>按后端时间和用户时区计算日期，默认 Asia/Singapore。尚未提交的旧日期题目在跨天后返回 409，提示加载今天的题；已经成功的提交即使次日重试仍返回原结果，不改变打卡日期。</td></tr>
+<tr><td>复习</td><td>答错次日；连续答对按 1、3、7、14 天递增并封顶。每个 Attempt 保存规则版本、间隔、依据和当时到期日，ReviewPlan 维护当前状态。客观题首版不要求自评，尚未开放自评输入。</td></tr>
+</table><p>一次成功提交即可形成当天打卡，同一天完成两个方向也只保留一条用户/日期打卡。复习日期已经落库，但本轮没有实现到期复习页面和历史列表；可在每日练习中刷新恢复当天结果。</p></section>
+<section id="api"><h2>接口与数据流</h2><table><tr><th>接口</th><th>作用</th></tr>
+<tr><td>POST /api/v1/auth/register、/login</td><td>创建账号或验证密码并设置会话；需要 X-Requested-With: learning-platform。</td></tr>
+<tr><td>GET /api/v1/auth/me</td><td>恢复当前账号、时区与 CSRF 令牌。</td></tr>
+<tr><td>POST /api/v1/auth/logout</td><td>撤销会话并清除 Cookie。</td></tr>
+<tr><td>GET /api/v1/tracks?domain_code=computer</td><td>读取领域内学习方向。</td></tr>
+<tr><td>GET /api/v1/today?track_id=...</td><td>认证后获取固定每日题；本人已完成时附带原结果，无已发布题时 assignment 为 null。</td></tr>
+<tr><td>POST /api/v1/attempts</td><td>提交 daily_assignment_id、question_version_id、answer、idempotency_key；由服务端判分，不接受客户端分数。</td></tr>
+<tr><td>GET /api/v1/attempts/{id}</td><td>读取本人的固定版本结果；非本人或不存在统一返回 404。</td></tr></table>
+<p>新表：users、auth_sessions、tracks、questions、question_versions、daily_assignments、attempts、check_ins、review_plans。均使用 InnoDB / utf8mb4、外键和相应唯一约束。数据库时间统一保存 UTC，打卡与复习使用单独的本地日期字段。</p>
+<details><summary>登录与浏览器请求保护</summary><ul><li>密码通过随机盐的 scrypt 保存；数据库仅保存随机会话令牌的 SHA-256 摘要，令牌有效期 7 天。</li><li>Cookie 使用 HttpOnly、SameSite=Strict 和 /api 路径。认证后的写请求需要与会话绑定的 X-CSRF-Token，注册/登录使用自定义请求头且不开放跨域。</li><li>接口响应禁止缓存；认证校验错误不回显请求原文和密码；数据库错误只返回通用 503。</li><li>前端不在 localStorage 保存密码或会话令牌。提交结果不确定时保留原答案和幂等键，重试不会生成第二条作答。</li></ul></details>
+</section>
+<section id="test"><h2>验收与复现</h2><pre>npm --prefix frontend run typecheck
+npm --prefix frontend run build
+Set-Location backend
+./.venv/Scripts/python.exe -m ruff check --config pyproject.toml . ../tools
+$env:TEST_DATABASE_URL = (Get-Content ../build/docker/test.env -Raw).Trim().Substring('TEST_DATABASE_URL='.Length)
+./.venv/Scripts/python.exe -m pytest -q
+Remove-Item Env:TEST_DATABASE_URL</pre>
+<p>切换 Docker 后，在独立 MySQL 测试容器重新执行 16 项测试全部通过：包含空库迁移升级/回退、重复导入、密码认证、CSRF、会话过期、答对/答错、答案不提前泄露、用户隔离、非法载荷、同键与异键并发提交、事务故障回滚、跨午夜重试、版本冻结、无题方向与复习规则。</p>
+<p>2026-10-27 浏览器完整验收使用新建的独立 Docker 开发库测试账号：注册成功 → 退出 → 使用密码登录 → 计算机单选题答对 100 分 → 整页刷新，结果文本完全一致 → 英语单选题答错 0 分 → 重新加载恢复结果。数据库返回的 hostname 与开发容器一致；容器内最终为两条作答、两条复习计划、同日唯一一条打卡，没有重复写入。未使用个人学习数据。凭据与截图仅放在被忽略的 build/verification/，不得提交。测试客户端仍有既有 Starlette/httpx 弃用提示，不影响本轮断言。</p>
+<p>开发与测试数据库均由 Docker Compose 运行，启动方式见本地开发与持续集成文档。测试库必须显式指定为以 _test 结尾的空专用 MySQL 库；测试只清理本次创建的表。不以 SQLite 代替 MySQL 的并发和事务证据。已有 CI 会运行完整 pytest；远程结果与分支交付状态以对应 PR 为准。</p>
+</section>
+<section id="limits"><h2>范围与后续工作</h2><ul><li>首版仅支持单选题；尚无简答题 AI 评分、自评输入、题库管理页面和人工复核。发布入口当前为后端样题导入命令。</li><li>每道样题当前归属一个方向，尚无跨方向题目映射；选题采用确定性轮转，不是个性化推荐。用户时区默认新加坡，尚无设置页面。</li><li>同日每日题不提供改答案或再答；后续复习应创建新的 Attempt，不能覆盖旧记录。</li><li>本地登录能力尚未包括密码找回、账号管理、登录限流与审计。上线前需补齐这些能力，并启用 HTTPS、COOKIE_SECURE=true；当前没有部署和 CD。</li><li>复习和历史列表尚未开放，离线行为分析尚未接入。规则效果须通过后续实验检验。</li></ul>
+<p>实现参考：<a href="https://docs.python.org/3.13/library/hashlib.html#hashlib.scrypt">Python scrypt</a>、<a href="https://docs.sqlalchemy.org/en/20/orm/session_transaction.html">SQLAlchemy 事务</a>、<a href="https://fastapi.tiangolo.com/advanced/response-cookies/">FastAPI Cookie 响应</a>。</p></section>
+<p><a href="本地开发与持续集成.html">本地开发与持续集成</a> · <a href="../../README.md">项目入口</a></p>
+</main></body></html>

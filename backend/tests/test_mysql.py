@@ -9,7 +9,7 @@ from sqlalchemy import inspect, text
 from sqlalchemy.engine import make_url
 from sqlalchemy.exc import IntegrityError
 
-from app.database import create_db_engine
+from app.database import Base, create_db_engine
 from app.main import SCHEMA_REVISION, create_app
 
 pytestmark = pytest.mark.integration
@@ -55,8 +55,8 @@ def test_empty_database_migration_roundtrip_and_api(monkeypatch):
             assert len(client.get("/api/v1/domains").json()) == 2
     finally:
         if owns_tables:
-            # 只清理本次测试在空库中创建的两张表，允许重复运行。
+            # 只清理本次测试在空库中创建的业务表，按外键依赖顺序删除。
+            Base.metadata.drop_all(engine)
             with engine.begin() as connection:
-                connection.execute(text("DROP TABLE IF EXISTS domains"))
                 connection.execute(text("DROP TABLE IF EXISTS alembic_version"))
         engine.dispose()

@@ -1,159 +1,84 @@
-"""使用已安装的 MySQL 8.0 程序，管理仅属于本项目的本地开发实例。"""
+"""通过 Docker Compose 管理本项目的开发和测试 MySQL，不启动宿主机数据库。"""
 
 import argparse
-import json
 import os
 import secrets
-import socket
+import shutil
 import subprocess
-import time
 from pathlib import Path
 
-import pymysql
+from sqlalchemy.engine import make_url
 
 ROOT = Path(__file__).resolve().parents[1]
-WORK = ROOT / "build" / "mysql"
-PORT = 3307
-
-
-def connect(password: str):
-    return pymysql.connect(
-        host="127.0.0.1",
-        port=PORT,
-        user="root",
-        password=password,
-        connect_timeout=2,
-        autocommit=True,
-    )
+WORK = ROOT / "build" / "docker"
 
 
 def main():
     parser = argparse.ArgumentParser(description=__doc__)
-    parser.add_argument("action", choices=["start", "stop"])
-    parser.add_argument("--bin", type=Path, help="MySQL 安装目录下的 bin 路径")
+    parser.add_argument("action", choices=["start", "stop", "status"])
     args = parser.parse_args()
-    credentials_path = WORK / "credentials.json"
-    credentials = (
-        json.loads(credentials_path.read_text()) if credentials_path.exists() else None
-    )
+    docker = shutil.which("docker")
+    if not docker and os.name == "nt":
+        candidate = Path(os.environ.get("ProgramFiles", "C:/Program Files")) / (
+            "Docker/Docker/resources/bin/docker.exe"
+        )
+        if candidate.is_file():
+            docker = str(candidate)
+    if not docker:
+        raise SystemExit("未找到 Docker，请先安装并启动 Docker Desktop（Linux 容器）。")
+    try:
+        subprocess.run([docker, "info", "--format", "{{.ServerVersion}}"], check=True, timeout=20)
+    except (subprocess.CalledProcessError, subprocess.TimeoutExpired):
+        raise SystemExit(
+            "Docker 引擎未就绪，请先检查 Docker Desktop；未启动宿主机数据库。"
+        ) from None
+    command = [docker, "compose", "-p", "learning-platform", "-f", str(ROOT / "compose.yaml")]
+    if args.action != "start":
+        subprocess.run(command + (["stop"] if args.action == "stop" else ["ps"]), check=True)
+        return
 
-    # 先核对数据目录，不能停止或接管其他实例。
-    if credentials:
-        try:
-            connection = connect(credentials["root"])
-        except pymysql.OperationalError:
-            connection = None
-        if connection:
-            with connection, connection.cursor() as cursor:
-                cursor.execute("SELECT @@datadir")
-                if Path(cursor.fetchone()[0]).resolve() != (WORK / "data").resolve():
-                    raise SystemExit("数据目录不属于本项目，拒绝操作。")
-                if args.action == "stop":
-                    cursor.execute("SHUTDOWN")
-            print(
-                "项目 MySQL 已停止"
-                if args.action == "stop"
-                else "项目 MySQL 已在 127.0.0.1:3307 运行"
-            )
-            return
-    if args.action == "stop":
-        raise SystemExit("项目 MySQL 未运行；未改动其他实例。")
-    if not args.bin or not (args.bin / "mysqld.exe").is_file():
-        raise SystemExit("请用 --bin 指定本机 MySQL 8.0 的 bin 目录。")
-    args.bin = args.bin.resolve()
-    with socket.socket() as probe:
-        if probe.connect_ex(("127.0.0.1", PORT)) == 0:
-            raise SystemExit("3307 已被其他进程占用，拒绝继续。")
+    backend_env = ROOT / "backend" / ".env"
+    previous = backend_env.read_text(encoding="utf-8") if backend_env.exists() else ""
+    # 只允许替换本项目旧连接，保留 Cookie 等无关设置；不接管其他数据库。
+    for line in previous.splitlines():
+        if line.startswith("DATABASE_URL="):
+            url = make_url(line.removeprefix("DATABASE_URL="))
+            if (url.host, url.port, url.database) != ("127.0.0.1", 3307, "learning_platform"):
+                raise SystemExit("backend/.env 指向其他数据库，拒绝覆盖。")
 
     WORK.mkdir(parents=True, exist_ok=True)
-    data = WORK / "data"
-    fresh = not data.exists()
-    if fresh and (ROOT / "backend" / ".env").exists():
-        raise SystemExit("backend/.env 已存在，请先核对其归属；脚本不会覆盖现有配置。")
-    if not fresh and not credentials:
-        raise SystemExit("数据目录存在但缺少项目凭据，拒绝重新初始化。")
-    config = WORK / "my.ini"
-    config.write_text(
-        "[mysqld]\n"
-        f"basedir={args.bin.parent.as_posix()}\n"
-        f"datadir={data.as_posix()}\n"
-        f"port={PORT}\nbind-address=127.0.0.1\nmysqlx=0\nskip-log-bin\n"
-        f"pid-file={(WORK / 'mysql.pid').as_posix()}\n"
-        f"log-error={(WORK / 'mysql-error.log').as_posix()}\n"
-        "character-set-server=utf8mb4\nmax_connections=30\n",
-        encoding="utf-8",
-    )
-    command = [str(args.bin / "mysqld.exe"), f"--defaults-file={config}"]
-    flags = subprocess.CREATE_NO_WINDOW if os.name == "nt" else 0
-    if fresh:
-        subprocess.run(
-            command + ["--initialize-insecure"], check=True, creationflags=flags
+    for kind, port, database in [
+        ("dev", 3307, "learning_platform"),
+        ("test", 3308, "learning_platform_test"),
+    ]:
+        env_path = WORK / f"mysql-{kind}.env"
+        if not env_path.exists():
+            if kind == "dev" and (WORK / "mysql-data").exists():
+                raise SystemExit("容器数据目录已存在但缺少凭据，拒绝重新初始化。")
+            env_path.write_text(
+                f"MYSQL_ROOT_PASSWORD={secrets.token_hex(24)}\n"
+                f"MYSQL_DATABASE={database}\nMYSQL_USER=learning_{kind}\n"
+                f"MYSQL_PASSWORD={secrets.token_hex(24)}\n",
+                encoding="utf-8",
+            )
+        values = dict(line.split("=", 1) for line in env_path.read_text().splitlines())
+        url = (
+            f"mysql+pymysql://{values['MYSQL_USER']}:{values['MYSQL_PASSWORD']}"
+            f"@127.0.0.1:{port}/{database}?charset=utf8mb4"
         )
-    subprocess.Popen(
-        command,
-        creationflags=flags,
-        stdout=subprocess.DEVNULL,
-        stderr=subprocess.DEVNULL,
-    )
-    for _ in range(30):
-        try:
-            connection = connect("" if fresh else credentials["root"])
-            break
-        except pymysql.OperationalError:
-            time.sleep(1)
-    else:
-        raise SystemExit(
-            "MySQL 未就绪，请查看 build/mysql/mysql-error.log；未修改其他实例。"
-        )
-    with connection:
-        if fresh:
-            credentials = {
-                name: secrets.token_hex(24) for name in ("root", "app", "test")
-            }
-            # 只授权本项目的开发库和独立测试库，凭据不进入命令行或 Git。
-            with connection.cursor() as cursor:
-                for database, user, key in [
-                    ("learning_platform", "learning_app", "app"),
-                    ("learning_platform_test", "learning_test", "test"),
-                ]:
-                    cursor.execute(
-                        f"CREATE DATABASE `{database}` CHARACTER SET utf8mb4"
-                    )
-                    cursor.execute(
-                        f"CREATE USER '{user}'@'127.0.0.1' IDENTIFIED BY %s",
-                        (credentials[key],),
-                    )
-                    cursor.execute(
-                        f"GRANT ALL ON `{database}`.* TO '{user}'@'127.0.0.1'"
-                    )
-                cursor.execute(
-                    "ALTER USER 'root'@'localhost' IDENTIFIED BY %s",
-                    (credentials["root"],),
-                )
-            credentials_path.write_text(json.dumps(credentials), encoding="utf-8")
-            for filename, key, user, database, variable in [
-                (
-                    ROOT / "backend" / ".env",
-                    "app",
-                    "learning_app",
-                    "learning_platform",
-                    "DATABASE_URL",
-                ),
-                (
-                    WORK / "test.env",
-                    "test",
-                    "learning_test",
-                    "learning_platform_test",
-                    "TEST_DATABASE_URL",
-                ),
-            ]:
-                filename.write_text(
-                    f"{variable}=mysql+pymysql://{user}:{credentials[key]}@127.0.0.1:{PORT}/{database}?charset=utf8mb4\n",
-                    encoding="utf-8",
-                )
-    print(
-        "项目 MySQL 已在 127.0.0.1:3307 运行；配置保存在 backend/.env 和 build/mysql/。"
-    )
+        if kind == "dev":
+            other_lines = [
+                line for line in previous.splitlines() if not line.startswith("DATABASE_URL=")
+            ]
+            backend_env.write_text(
+                "\n".join([f"DATABASE_URL={url}", *other_lines]) + "\n", encoding="utf-8"
+            )
+        else:
+            (WORK / "test.env").write_text(f"TEST_DATABASE_URL={url}\n", encoding="utf-8")
+
+    subprocess.run(command + ["up", "-d", "--wait", "--wait-timeout", "180"], check=True)
+    print("Docker MySQL 已就绪：开发 127.0.0.1:3307，测试 127.0.0.1:3308。")
+    print("连接配置位于 backend/.env 与 build/docker/test.env，均不纳入 Git。")
 
 
 if __name__ == "__main__":

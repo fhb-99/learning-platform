@@ -7,6 +7,7 @@ from sqlalchemy.engine import make_url
 
 class Settings(BaseSettings):
     database_url: SecretStr
+    cookie_secure: bool = False
 
     model_config = SettingsConfigDict(
         env_file=Path(__file__).resolve().parents[1] / ".env",

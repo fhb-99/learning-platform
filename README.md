@@ -2,16 +2,19 @@
 
 基于学习行为分析的毕业设计，主要研究学习行为分析与可解释复习策略。
 
-核心技术栈：Vue 3 + TypeScript、Python FastAPI、MySQL、DuckDB + Parquet。当前已实现前后端与 MySQL 联通骨架、数据库迁移入口和最小 CI；练习业务、离线分析与 CD 尚未实施。
+核心技术栈：Vue 3 + TypeScript、Python FastAPI、MySQL、DuckDB + Parquet。当前已实现基础账号登录、单选每日题、后端判分、提交日打卡、初始复习日期与最小 CI；复习列表、题库管理界面、离线分析与 CD 尚未实施。
 
 ## 阅读入口
 
+- [每日练习功能与验收](docs/开发与验证/每日练习功能与验收.html)：登录、样题导入、答题规则、事务与当前边界。
 - [本地开发与持续集成](docs/开发与验证/本地开发与持续集成.html)：安装、启动、验证、CI 检查与当前边界。
 - [毕业设计启动指南](docs/毕业设计启动指南.html)：从第一条练习闭环开始，说明开发顺序和验收方式。HTML 下载后可在浏览器直接打开。
 - [系统技术设计](docs/个性化知识练习与复习系统_技术设计文档.html)
 - [发布与 CI/CD 方案](docs/部署与交付/发布与CI-CD工作流方案.html)
 - [业务术语](CONTEXT.md)
 - [协作约定](AGENTS.md)
+
+数据库开发与测试统一使用 Docker Compose，不启动宿主机 MySQL。运行 `python tools/dev_mysql.py start`（使用 backend/.venv 的 Python），分别启动开发库 3307 与测试库 3308；完整命令见本地开发文档。
 
 ## 首个开发目标
 

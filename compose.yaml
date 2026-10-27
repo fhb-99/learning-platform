@@ -1,0 +1,30 @@
+services:
+  mysql-dev:
+    image: mysql:8.0
+    env_file: ./build/docker/mysql-dev.env
+    ports:
+      - "127.0.0.1:3307:3306"
+    volumes:
+      - ./build/docker/mysql-data:/var/lib/mysql
+    healthcheck:
+      test: ["CMD-SHELL", 'MYSQL_PWD="$$MYSQL_PASSWORD" mysql --protocol=TCP -h 127.0.0.1 -u "$$MYSQL_USER" "$$MYSQL_DATABASE" -e "SELECT 1" >/dev/null 2>&1']
+      interval: 5s
+      timeout: 5s
+      retries: 30
+    # 显式启动，避免 Docker Desktop 启动时自动恢复项目服务。
+    restart: "no"
+
+  mysql-test:
+    image: mysql:8.0
+    env_file: ./build/docker/mysql-test.env
+    ports:
+      - "127.0.0.1:3308:3306"
+    # 测试数据与开发数据隔离，容器停止后不保留测试库内容。
+    tmpfs:
+      - /var/lib/mysql
+    healthcheck:
+      test: ["CMD-SHELL", 'MYSQL_PWD="$$MYSQL_PASSWORD" mysql --protocol=TCP -h 127.0.0.1 -u "$$MYSQL_USER" "$$MYSQL_DATABASE" -e "SELECT 1" >/dev/null 2>&1']
+      interval: 5s
+      timeout: 5s
+      retries: 30
+    restart: "no"
