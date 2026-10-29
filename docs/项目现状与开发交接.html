@@ -11,7 +11,7 @@
 <header><small>交接基准：2026-10-29 · Asia/Singapore · 唯一维护入口</small><h1>项目现状与开发交接</h1><p>先读这一页，再读对应模块文档。目标是接续当前实现与决策，不重新做一轮项目规划。</p><nav aria-label="交接导航"><a href="#now">现在到哪了</a><a href="#decisions">已确认方向</a><a href="#map">代码定位</a><a href="#run">运行与规范</a><a href="#next">下一步</a></nav></header>
 <main>
 <section id="now"><h2>01 · 现在到哪了</h2>
-<p class="note"><strong>用户端的每日练习 → 到期复习 → 学习记录已经在本地跑通。</strong><br>PR #1–#4 均已合并；已合并的每日练习代码基准是 <a href="https://github.com/fhb-99/learning-platform/commit/4543dfab602b0c074705502219e98e0b78f6ae6d"><code>main @ 4543dfa</code></a>（PR #4 合并）。本轮个人复习与学习记录位于功能分支 <code>feat/personal-review</code>，从最新 origin/main 起步并快进保留已有交接提交 <code>92e09b0</code>；本轮通过该功能分支向 main 提 PR，尚未合并。远程 CI 状态以 PR 当前提交的检查结果为准，不能把本地验收当成远程 CI。继续开发前仍须 fetch。</p>
+<p class="note"><strong>用户端的每日练习 → 到期复习 → 学习记录已完成，本页为 PR #6 合入 main 后的交接基准。</strong><br>PR #1–#4 已完成基础功能；个人复习与学习记录通过 <a href="https://github.com/fhb-99/learning-platform/pull/6">PR #6</a> 集成至 <code>main</code>，功能提交为 <a href="https://github.com/fhb-99/learning-platform/commit/19a4c73f2046b06639f9d47363a20f38e3d78a48"><code>19a4c73</code></a>，同时包含前置交接提交 <code>92e09b0</code>（PR #5）。后续从最新 <code>origin/main</code> 创建功能分支；合并提交与最终检查结果见 PR #6，继续开发前仍须 fetch。功能已完成本地验收和远程 CI，尚未部署。</p>
 <div class="flow" aria-label="已实现流程"><span>独立注册 / 登录</span><span>领域与方向</span><span>统一每日题</span><span>提交与判分</span><span>解析 / 打卡 / 复习日期</span><span>到期重新作答</span><span>学习记录 / 刷新恢复</span></div>
 <div class="grid"><div><h3><span class="tag">已实现</span></h3><ul><li>Vue 用户端：左侧功能列表；独立登录/注册视图、确认密码、退出和失效返回登录。</li><li>计算机、英语各 6 道自编单选样题；当天首次提交、幂等重试、答案提交后可见。</li><li>每日题与复习作答、规则成绩、打卡、复习计划在 MySQL 同一事务落库。</li><li>个人复习：领域过滤、到期/逾期排序与分页、重答、解析、同题每天一次、刷新恢复。</li><li>学习记录：按领域、来源和本地日期筛选；游标分页；查看原题版本、原答案、当次安排及当前计划。</li><li>Docker 开发/测试库隔离；两项 CI 为 main 合并门禁。</li></ul></div><div><h3><span class="tag pending">尚未实现</span></h3><ul><li>管理端、题库编辑发布页面；当前通过 <code>app.seed</code> 导入样题。</li><li>简答题、AI 评分、自评、Agent、DuckDB/Parquet 分析和实验。</li><li>密码找回、账号管理、上线限流审计；尚未部署，CD 暂不做。</li></ul></div></div>
 <details><summary>已验证到什么程度（2026-10-29）</summary>
@@ -20,7 +20,7 @@
 <p><strong>提交前复查：</strong>修复历史分页混用未应用筛选条件的问题，分页只沿用已应用条件；修复复习队列在其他窗口完成题目后页码越界的问题。浏览器使用 21 条模拟列表验证筛选草稿与分页隔离、列表收缩为 5 条/0 条时自动回到有效页；这些是前端响应模拟测试，不计作新的真实数据库样例。后端重点复查用户锁、来源约束、幂等冲突、迁移与数据保留，未发现新的阻塞问题。</p>
 <p><strong>落库核对：</strong>专用验收账号共 7 条作答（4 次每日题、3 次复习）、3 个本地日期的打卡、4 条个人计划；“已保存但响应丢失”的原键重试没有新增记录。同日多次提交没有重复打卡。上述计数仅属于本轮专用样例。</p>
 <p><strong>运行边界：</strong>开发库已迁移至 <code>0003_personal_review</code>，<code>alembic check</code> 通过。本轮使用 <code>127.0.0.1:5174 → 8001 → Docker 3307</code> 验收；自动审批拒绝重启原 8000 后端的命令，原进程保留，默认 5173 页面需原后端重启后才匹配新结构。新端口是本地临时验收服务，未部署到远程。</p>
-<p>新增测试保存在 <code>backend/tests/test_reviews.py</code>；浏览器脚本、截图和验收账号信息在被忽略的 <code>build/verification/review/</code>。浏览器验收使用固定过去日期生成专用样例，未改已有用户数据；这些样例不属于真实用户学习效果证据。浏览器 E2E 尚未加入 CI；保留一条既有 Starlette/httpx 弃用提示。提交后的远程 CI 由指向 main 的功能 PR 触发，检查 Frontend checks 与 Backend checks；旧 PR #4 CI 只证明旧提交。</p>
+<p>新增测试保存在 <code>backend/tests/test_reviews.py</code>；浏览器脚本、截图和验收账号信息在被忽略的 <code>build/verification/review/</code>。浏览器验收使用固定过去日期生成专用样例，未改已有用户数据；这些样例不属于真实用户学习效果证据。浏览器 E2E 尚未加入 CI；保留一条既有 Starlette/httpx 弃用提示。远程验证：<a href="https://github.com/fhb-99/learning-platform/actions/runs/40893054636">PR #6 功能提交 19a4c73 的 CI</a> 中 Frontend checks 与 Backend checks 均通过。后续文档提交仍须通过同样门禁再合并；最终提交检查以 <a href="https://github.com/fhb-99/learning-platform/pull/6/checks">PR #6 检查页</a> 为准。该证据与上述本地测试、浏览器验收分别记录。</p>
 </details>
 </section>
 <section id="decisions"><h2>02 · 已确认的方向，不重复问</h2>
@@ -63,8 +63,8 @@ Remove-Item Env:TEST_DATABASE_URL</pre><p>以上假设依赖已安装；新检�
 <details><summary>已遇到的环境问题，仅在复发时参考</summary><ul><li>Docker Desktop 曾因残留的 <code>dockerInference</code> / <code>engine.sock</code> 通信文件启动失败。先检查引擎和日志，不做恢复出厂或删除数据；历史处理是停止已失败的 Desktop 后重命名相应运行目录，让其重建。</li><li>Git 旧代理 127.0.0.1:7892 可能不可用。本轮通过直连 <code>ssh.github.com:443</code> 拉取/推送成功；仅用单次命令配置，不修改全局代理。</li><li>GitHub 连接器可读，但写操作返回 403；本轮通过已登录的 GitHub 浏览器按保护规则合并。工具权限失败不代表可以绕过主分支规则。</li><li>服务进程、端口、容器与远程分支会变化；下一对话必须现查，不能仅依赖交接时的运行状态。</li></ul></details>
 </section>
 <section id="next"><h2>05 · 下一步怎样接上</h2>
-<p class="note"><strong>本阶段已实现个人复习与学习记录，下一项建议是题库管理与版本发布。</strong>用户已要求复查、提交、推送功能分支、创建指向 main 的 PR 并等待 CI；尚未要求合并或上线。</p>
-<ol><li><strong>接续当前工作：</strong>检查 <code>feat/personal-review</code> 的工作区和远程 PR 状态；该分支包含已有交接提交 92e09b0（PR #5），保留此前置文档变更。合并前核对 origin/main 祖先、提交范围和当前提交的 CI，不自动合并 PR #5 或本功能 PR。</li>
+<p class="note"><strong>本阶段已实现个人复习与学习记录，下一项建议是题库管理与版本发布。</strong>用户已授权合并 PR #6、同步本地 main 并更新交接状态；该阶段以代码与本文一并进入 main 为交付，尚未要求上线或开始题库管理实现。</p>
+<ol><li><strong>接续当前工作：</strong>先检查工作区、fetch 并确认本地 <code>main</code> 与 <code>origin/main</code> 同步，再从最新主分支创建下一条功能分支。前置交接提交 92e09b0（PR #5）已包含在 PR #6 的集成范围，无须再次合并 PR #5；不要从旧功能分支继续新开发。</li>
 <li><strong>题库管理与发布：</strong>先确定管理员身份与权限，再做题目草稿、校验、不可变版本发布；用新版本不影响历史答案与既有复习为验收。现有样题仍通过 <code>app.seed</code> 导入。</li>
 <li><strong>之后：</strong>行为数据导出及 DuckDB 核对 → 可解释策略对照实验 → 分阶段接入 Agent。已有复习保留原定到期日、实际提交日、触发作答和规则版本，供后续分析使用。</li></ol>
 <details><summary>新接口、约束和迁移注意事项</summary>
