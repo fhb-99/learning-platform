@@ -185,7 +185,7 @@ onBeforeUnmount(() => { disposed = true; ++loadVersion })
         <p class="question-source">{{ daily.assignment.source }}</p>
         <div v-if="!daily.assignment.result" class="submit-row"><button class="primary-button" type="submit" :disabled="!answer || submitting">{{ submitting ? '正在提交…' : pendingAnswer ? '重试原提交' : '提交答案' }}</button><span>提交后显示解析，当天结果会保留。</span></div>
         <section v-else class="answer-result" aria-label="答题结果" aria-live="polite">
-          <h3>{{ daily.assignment.result.score === 100 ? '回答正确' : '这道题答错了' }}<span>{{ daily.assignment.result.score }} 分</span></h3>
+          <h3>{{ daily.assignment.result.score === 100 ? '回答正确' : '这道题答错了' }}</h3>
           <p>你的答案：{{ daily.assignment.result.answer }}　正确答案：{{ daily.assignment.result.correct_answer }}</p>
           <h4>解析</h4><p>{{ daily.assignment.result.explanation }}</p>
           <div class="review-summary"><span>已计入 {{ daily.assignment.result.check_in_date }} 打卡</span><span>下次复习：{{ daily.assignment.result.review_due_date }}</span><small>{{ daily.assignment.result.review_reason }}。这是初始规则，后续通过实验评估。</small></div>
@@ -228,7 +228,7 @@ legend { font-size: 18px; line-height: 1.8; font-weight: 500; padding: 0; margin
 .submit-row { display: flex; gap: 18px; align-items: center; flex-wrap: wrap; }
 .submit-row > span { font-size: 12px; color: var(--muted); }
 .answer-result { background: #f4f6f0; border-radius: 18px; padding: 22px; }
-.answer-result h3 { margin: 0 0 16px; font-size: 17px; font-weight: 500; display: flex; justify-content: space-between; gap: 12px; }
+.answer-result h3 { margin: 0 0 16px; font-size: 17px; font-weight: 500; }
 .answer-result h4 { font-size: 13px; margin: 20px 0 8px; font-weight: 500; }
 .answer-result p { font-size: 13px; line-height: 1.9; margin: 0; }
 .review-summary { display: grid; gap: 9px; border-top: 1px solid #e1e7da; margin-top: 20px; padding-top: 18px; font-size: 12px; }
