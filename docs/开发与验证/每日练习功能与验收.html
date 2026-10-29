@@ -24,7 +24,7 @@ Set-Location backend
 <tr><td>幂等与并发</td><td>用户 + UUID 幂等键唯一；同键同内容重试返回原结果，同键不同内容返回 409；用户 + 每日题唯一。通过用户行锁串行化同一用户的提交，不锁住其他用户。</td></tr>
 <tr><td>跨天</td><td>按后端时间和用户时区计算日期，默认 Asia/Singapore。尚未提交的旧日期题目在跨天后返回 409，提示加载今天的题；已经成功的提交即使次日重试仍返回原结果，不改变打卡日期。</td></tr>
 <tr><td>复习</td><td>答错次日；连续答对按 1、3、7、14 天递增并封顶。每个 Attempt 保存规则版本、间隔、依据和当时到期日，ReviewPlan 维护当前状态。客观题首版不要求自评，尚未开放自评输入。</td></tr>
-</table><p>一次成功提交即可形成当天打卡，同一天完成两个方向也只保留一条用户/日期打卡。复习日期已经落库，但本轮没有实现到期复习页面和历史列表；可在每日练习中刷新恢复当天结果。</p></section>
+</table><p>一次成功提交即可形成当天打卡，同一天完成两个方向也只保留一条用户/日期打卡。每日练习可刷新恢复当天结果。2026-10-29 的个人复习功能分支已补齐到期重答与历史列表，最新实现和验证边界见<a href="../项目现状与开发交接.html">项目交接</a>。</p></section>
 <section id="api"><h2>接口与数据流</h2><table><tr><th>接口</th><th>作用</th></tr>
 <tr><td>POST /api/v1/auth/register、/login</td><td>创建账号或验证密码并设置会话；需要 X-Requested-With: learning-platform。</td></tr>
 <tr><td>GET /api/v1/auth/me</td><td>恢复当前账号、时区与 CSRF 令牌。</td></tr>
@@ -49,7 +49,7 @@ Remove-Item Env:TEST_DATABASE_URL</pre>
 <p>本次继续使用项目 Docker 开发库与独立测试库，未启动宿主机 MySQL；16 项后端测试、前端类型检查与生产构建通过。上述页面验收为真实浏览器手工自动化操作，尚未纳入 CI 的前端端到端测试。截图及临时账号保存在被忽略的 build/verification/ 中。</p>
 <p>开发与测试数据库均由 Docker Compose 运行，启动方式见本地开发与持续集成文档。测试库必须显式指定为以 _test 结尾的空专用 MySQL 库；测试只清理本次创建的表。不以 SQLite 代替 MySQL 的并发和事务证据。已有 CI 会运行完整 pytest；远程结果与分支交付状态以对应 PR 为准。</p>
 </section>
-<section id="limits"><h2>范围与后续工作</h2><ul><li>首版仅支持单选题；尚无简答题 AI 评分、自评输入、题库管理页面和人工复核。发布入口当前为后端样题导入命令。</li><li>每道样题当前归属一个方向，尚无跨方向题目映射；选题采用确定性轮转，不是个性化推荐。用户时区默认新加坡，尚无设置页面。</li><li>同日每日题不提供改答案或再答；后续复习应创建新的 Attempt，不能覆盖旧记录。</li><li>本地登录能力尚未包括密码找回、账号管理、登录限流与审计。上线前需补齐这些能力，并启用 HTTPS、COOKIE_SECURE=true；当前没有部署和 CD。</li><li>复习和历史列表尚未开放，离线行为分析尚未接入。规则效果须通过后续实验检验。</li></ul>
+<section id="limits"><h2>范围与后续工作</h2><ul><li>首版仅支持单选题；尚无简答题 AI 评分、自评输入、题库管理页面和人工复核。发布入口当前为后端样题导入命令。</li><li>每道样题当前归属一个方向，尚无跨方向题目映射；选题采用确定性轮转，不是个性化推荐。用户时区默认新加坡，尚无设置页面。</li><li>同日每日题不提供改答案或再答；个人复习创建新的 Attempt，不能覆盖旧记录。</li><li>本地登录能力尚未包括密码找回、账号管理、登录限流与审计。上线前需补齐这些能力，并启用 HTTPS、COOKIE_SECURE=true；当前没有部署和 CD。</li><li>复习和历史列表已在本地功能分支实现；离线行为分析尚未接入。规则效果须通过后续实验检验。</li></ul>
 <p>实现参考：<a href="https://docs.python.org/3.13/library/hashlib.html#hashlib.scrypt">Python scrypt</a>、<a href="https://docs.sqlalchemy.org/en/20/orm/session_transaction.html">SQLAlchemy 事务</a>、<a href="https://fastapi.tiangolo.com/advanced/response-cookies/">FastAPI Cookie 响应</a>。</p></section>
 <p><a href="本地开发与持续集成.html">本地开发与持续集成</a> · <a href="../../README.md">项目入口</a></p>
 </main></body></html>

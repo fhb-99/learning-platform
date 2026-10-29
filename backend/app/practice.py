@@ -22,7 +22,7 @@ from app.models import (
 )
 
 router = APIRouter(prefix="/api/v1", tags=["每日练习"])
-RULE_VERSION = "review-v1"
+RULE_VERSION = "review-v2"
 
 
 class Submission(BaseModel):
@@ -188,35 +188,54 @@ def submit(data: Submission, request: Request, user: AuthenticatedUser):
         version = session.get(QuestionVersion, assignment.question_version_id)
         if data.answer not in {option["id"] for option in version.options}:
             raise HTTPException(422, "请选择有效选项")
-        correct = data.answer == version.correct_answer
-        plan = session.get(ReviewPlan, (user.id, version.question_id))
-        streak, interval, reason = review_schedule(correct, plan.correct_streak if plan else 0)
-        attempt = Attempt(
-            user_id=user.id,
-            daily_assignment_id=assignment.id,
-            question_version_id=version.id,
-            idempotency_key=str(data.idempotency_key),
-            answer=data.answer,
-            score=100 if correct else 0,
-            submitted_at=now,
-            local_date=day,
-            review_due_date=day + timedelta(days=interval),
-            review_interval_days=interval,
-            review_reason=reason,
-            rule_version=RULE_VERSION,
+        return save_attempt(
+            session, locked_user, version, data, now, day, daily_assignment_id=assignment.id
         )
-        session.add(attempt)
-        session.flush()
-        if session.get(CheckIn, (user.id, day)) is None:
-            session.add(CheckIn(user_id=user.id, local_date=day, first_attempt_id=attempt.id))
-        if plan is None:
-            plan = ReviewPlan(user_id=user.id, question_id=version.question_id)
-            session.add(plan)
-        plan.correct_streak = streak
-        plan.due_date = attempt.review_due_date
-        plan.latest_attempt_id = attempt.id
-        session.flush()
-        return attempt_result(attempt, version)
+
+
+def save_attempt(session, user, version, data, now, day, *, daily_assignment_id=None, plan=None):
+    # 所有练习共用一次事务：作答、打卡与计划一起成功或回滚。
+    if plan is None:
+        plan = session.get(ReviewPlan, (user.id, version.question_id))
+    previous = session.get(Attempt, plan.latest_attempt_id) if plan else None
+    correct = data.answer == version.correct_answer
+    streak, interval, reason = review_schedule(correct, plan.correct_streak if plan else 0)
+    due_date = day + timedelta(days=interval)
+    if previous and previous.local_date == day:
+        # 每日题与复习碰到同一道题时，第二次答对不重复推进阶段；答错仍重置。
+        if correct:
+            streak, due_date = plan.correct_streak, plan.due_date
+            interval = (due_date - day).days
+            reason = "同题今日已调度，答对保留已有复习安排"
+    attempt = Attempt(
+        user_id=user.id,
+        daily_assignment_id=daily_assignment_id,
+        review_question_id=version.question_id if daily_assignment_id is None else None,
+        review_basis_attempt_id=previous.id if daily_assignment_id is None else None,
+        scheduled_due_date=plan.due_date if daily_assignment_id is None else None,
+        question_version_id=version.id,
+        idempotency_key=str(data.idempotency_key),
+        answer=data.answer,
+        score=100 if correct else 0,
+        submitted_at=now,
+        local_date=day,
+        review_due_date=due_date,
+        review_interval_days=interval,
+        review_reason=reason,
+        rule_version=RULE_VERSION,
+    )
+    session.add(attempt)
+    session.flush()
+    if session.get(CheckIn, (user.id, day)) is None:
+        session.add(CheckIn(user_id=user.id, local_date=day, first_attempt_id=attempt.id))
+    if plan is None:
+        plan = ReviewPlan(user_id=user.id, question_id=version.question_id)
+        session.add(plan)
+    plan.correct_streak = streak
+    plan.due_date = attempt.review_due_date
+    plan.latest_attempt_id = attempt.id
+    session.flush()
+    return attempt_result(attempt, version)
 
 
 @router.get("/attempts/{attempt_id}")

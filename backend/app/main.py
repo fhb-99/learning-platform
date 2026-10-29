@@ -15,8 +15,9 @@ from app.config import Settings
 from app.database import create_db_engine
 from app.models import Domain
 from app.practice import router as practice_router
+from app.reviews import router as reviews_router
 
-SCHEMA_REVISION = "0002_daily_practice"
+SCHEMA_REVISION = "0003_personal_review"
 
 
 class Readiness(BaseModel):
@@ -50,6 +51,7 @@ def create_app(engine: Engine | None = None) -> FastAPI:
     app.state.clock = lambda: datetime.now(timezone.utc).replace(tzinfo=None)
     app.include_router(auth_router)
     app.include_router(practice_router)
+    app.include_router(reviews_router)
 
     @app.exception_handler(RequestValidationError)
     async def invalid_request(request: Request, error: RequestValidationError):
