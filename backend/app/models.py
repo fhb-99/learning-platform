@@ -1,6 +1,16 @@
 from datetime import date, datetime
 
-from sqlalchemy import JSON, Date, DateTime, ForeignKey, String, Text, UniqueConstraint
+from sqlalchemy import (
+    JSON,
+    CheckConstraint,
+    Date,
+    DateTime,
+    ForeignKey,
+    Index,
+    String,
+    Text,
+    UniqueConstraint,
+)
 from sqlalchemy.orm import Mapped, mapped_column
 
 from app.database import Base
@@ -72,10 +82,22 @@ class Attempt(Base):
     __table_args__ = (
         UniqueConstraint("user_id", "idempotency_key", name="uq_attempt_user_key"),
         UniqueConstraint("user_id", "daily_assignment_id", name="uq_attempt_user_daily"),
+        UniqueConstraint("user_id", "review_question_id", "local_date", name="uq_review_user_day"),
+        CheckConstraint(
+            "(daily_assignment_id IS NOT NULL AND review_question_id IS NULL "
+            "AND review_basis_attempt_id IS NULL AND scheduled_due_date IS NULL) OR "
+            "(daily_assignment_id IS NULL AND review_question_id IS NOT NULL "
+            "AND review_basis_attempt_id IS NOT NULL AND scheduled_due_date IS NOT NULL)",
+            name="ck_attempt_source",
+        ),
+        Index("ix_attempt_user_history", "user_id", "id"),
     )
     id: Mapped[int] = mapped_column(primary_key=True)
     user_id: Mapped[int] = mapped_column(ForeignKey("users.id"))
-    daily_assignment_id: Mapped[int] = mapped_column(ForeignKey("daily_assignments.id"))
+    daily_assignment_id: Mapped[int | None] = mapped_column(ForeignKey("daily_assignments.id"))
+    review_question_id: Mapped[int | None] = mapped_column(ForeignKey("questions.id"))
+    review_basis_attempt_id: Mapped[int | None] = mapped_column(ForeignKey("attempts.id"))
+    scheduled_due_date: Mapped[date | None] = mapped_column(Date)
     question_version_id: Mapped[int] = mapped_column(ForeignKey("question_versions.id"))
     idempotency_key: Mapped[str] = mapped_column(String(36))
     answer: Mapped[str] = mapped_column(String(1))
@@ -98,6 +120,7 @@ class CheckIn(Base):
 
 class ReviewPlan(Base):
     __tablename__ = "review_plans"
+    __table_args__ = (Index("ix_review_user_due", "user_id", "due_date", "question_id"),)
     user_id: Mapped[int] = mapped_column(ForeignKey("users.id"), primary_key=True)
     question_id: Mapped[int] = mapped_column(ForeignKey("questions.id"), primary_key=True)
     correct_streak: Mapped[int]

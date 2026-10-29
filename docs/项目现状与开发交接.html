@@ -11,21 +11,30 @@
 <header><small>交接基准：2026-10-29 · Asia/Singapore · 唯一维护入口</small><h1>项目现状与开发交接</h1><p>先读这一页，再读对应模块文档。目标是接续当前实现与决策，不重新做一轮项目规划。</p><nav aria-label="交接导航"><a href="#now">现在到哪了</a><a href="#decisions">已确认方向</a><a href="#map">代码定位</a><a href="#run">运行与规范</a><a href="#next">下一步</a></nav></header>
 <main>
 <section id="now"><h2>01 · 现在到哪了</h2>
-<p class="note"><strong>用户端的登录 → 每日练习 → 结果恢复已经跑通。</strong><br>PR #1–#4 均已合并；本页的代码基准是 <a href="https://github.com/fhb-99/learning-platform/commit/4543dfab602b0c074705502219e98e0b78f6ae6d"><code>main @ 4543dfa</code></a>（PR #4 合并）。继续开发前仍须 fetch，不能把本文 SHA 当成永久最新状态。</p>
-<div class="flow" aria-label="已实现流程"><span>独立注册 / 登录</span><span>领域与方向</span><span>统一每日题</span><span>提交与判分</span><span>解析 / 打卡 / 复习日期</span><span>刷新恢复</span></div>
-<div class="grid"><div><h3><span class="tag">已实现</span></h3><ul><li>Vue 用户端：左侧功能列表；独立登录/注册视图、确认密码、退出和失效返回登录。</li><li>计算机、英语各 6 道自编单选样题；当天首次提交、幂等重试、答案提交后可见。</li><li>作答、规则成绩、打卡、复习计划在 MySQL 同一事务落库。</li><li>Docker 开发/测试库隔离；两项 CI 为 main 合并门禁。</li></ul></div><div><h3><span class="tag pending">尚未实现</span></h3><ul><li>个人复习队列、到期重答、完整学习记录；侧栏已有占位页面。</li><li>管理端、题库编辑发布页面；当前通过 <code>app.seed</code> 导入样题。</li><li>简答题、AI 评分、自评、Agent、DuckDB/Parquet 分析和实验。</li><li>密码找回、账号管理、上线限流审计；尚未部署，CD 暂不做。</li></ul></div></div>
-<details><summary>已验证到什么程度</summary><p>2026-10-29：Docker 测试库 16 项 pytest 通过，前端类型检查和构建通过；<a href="https://github.com/fhb-99/learning-platform/actions/runs/40881784514">PR #4 CI</a> 的 Frontend checks / Backend checks 均通过。</p><p>真实浏览器 + Docker 开发库：注册、确认密码不一致、重复用户名、错误密码、登录、两种答题结果不显示分数、刷新恢复、跨页面退出、退出后刷新、会话过期及连接失败重试通过；检查桌面与 390px 窄屏。浏览器端到端验收尚未加入 CI。既有 Starlette/httpx 弃用提示 1 条。</p><p>证据详见<a href="开发与验证/每日练习功能与验收.html#test">每日练习验收</a>。本地截图在被忽略的 <code>build/verification/</code>；这不是算法效果或真实用户试用证据。</p></details>
+<p class="note"><strong>用户端的每日练习 → 到期复习 → 学习记录已经在本地跑通。</strong><br>PR #1–#4 均已合并；已合并的每日练习代码基准是 <a href="https://github.com/fhb-99/learning-platform/commit/4543dfab602b0c074705502219e98e0b78f6ae6d"><code>main @ 4543dfa</code></a>（PR #4 合并）。本轮个人复习与学习记录位于功能分支 <code>feat/personal-review</code>，从最新 origin/main 起步并快进保留已有交接提交 <code>92e09b0</code>；本轮通过该功能分支向 main 提 PR，尚未合并。远程 CI 状态以 PR 当前提交的检查结果为准，不能把本地验收当成远程 CI。继续开发前仍须 fetch。</p>
+<div class="flow" aria-label="已实现流程"><span>独立注册 / 登录</span><span>领域与方向</span><span>统一每日题</span><span>提交与判分</span><span>解析 / 打卡 / 复习日期</span><span>到期重新作答</span><span>学习记录 / 刷新恢复</span></div>
+<div class="grid"><div><h3><span class="tag">已实现</span></h3><ul><li>Vue 用户端：左侧功能列表；独立登录/注册视图、确认密码、退出和失效返回登录。</li><li>计算机、英语各 6 道自编单选样题；当天首次提交、幂等重试、答案提交后可见。</li><li>每日题与复习作答、规则成绩、打卡、复习计划在 MySQL 同一事务落库。</li><li>个人复习：领域过滤、到期/逾期排序与分页、重答、解析、同题每天一次、刷新恢复。</li><li>学习记录：按领域、来源和本地日期筛选；游标分页；查看原题版本、原答案、当次安排及当前计划。</li><li>Docker 开发/测试库隔离；两项 CI 为 main 合并门禁。</li></ul></div><div><h3><span class="tag pending">尚未实现</span></h3><ul><li>管理端、题库编辑发布页面；当前通过 <code>app.seed</code> 导入样题。</li><li>简答题、AI 评分、自评、Agent、DuckDB/Parquet 分析和实验。</li><li>密码找回、账号管理、上线限流审计；尚未部署，CD 暂不做。</li></ul></div></div>
+<details><summary>已验证到什么程度（2026-10-29）</summary>
+<p><strong>自动测试：</strong>Docker 独立 MySQL 测试库全量 <strong>27 项 pytest 通过</strong>（原有 16 项 + 新增 11 项），Ruff、前端类型检查、生产构建通过。覆盖空库迁移、带每日题数据升级保留、模型与迁移一致、复习来源/每天唯一约束、幂等重试、不同键并发、CSRF/用户隔离、午夜边界、旧版本、到期排序分页、历史筛选及事务回滚。</p>
+<p><strong>真实浏览器：</strong>Edge + Docker 开发库，专用验收账号，通过计算机答对/答错、英语复习、次日安排、刷新恢复、当天禁止再答、清空到期列表、历史来源/日期筛选、旧答案回看、历史详情刷新与跨领域切换。注入“后端已保存但响应丢失”，确认原答案锁定、原键重试恢复；延迟旧领域响应，确认不覆盖新页面。已检查 1440px 桌面与 390px 窄屏，复习结果与历史页面无横向溢出。每日练习回归遇到一次浏览器连接失败，原提交重试后成功；历史同步、退出登录和退出后刷新通过。</p>
+<p><strong>提交前复查：</strong>修复历史分页混用未应用筛选条件的问题，分页只沿用已应用条件；修复复习队列在其他窗口完成题目后页码越界的问题。浏览器使用 21 条模拟列表验证筛选草稿与分页隔离、列表收缩为 5 条/0 条时自动回到有效页；这些是前端响应模拟测试，不计作新的真实数据库样例。后端重点复查用户锁、来源约束、幂等冲突、迁移与数据保留，未发现新的阻塞问题。</p>
+<p><strong>落库核对：</strong>专用验收账号共 7 条作答（4 次每日题、3 次复习）、3 个本地日期的打卡、4 条个人计划；“已保存但响应丢失”的原键重试没有新增记录。同日多次提交没有重复打卡。上述计数仅属于本轮专用样例。</p>
+<p><strong>运行边界：</strong>开发库已迁移至 <code>0003_personal_review</code>，<code>alembic check</code> 通过。本轮使用 <code>127.0.0.1:5174 → 8001 → Docker 3307</code> 验收；自动审批拒绝重启原 8000 后端的命令，原进程保留，默认 5173 页面需原后端重启后才匹配新结构。新端口是本地临时验收服务，未部署到远程。</p>
+<p>新增测试保存在 <code>backend/tests/test_reviews.py</code>；浏览器脚本、截图和验收账号信息在被忽略的 <code>build/verification/review/</code>。浏览器验收使用固定过去日期生成专用样例，未改已有用户数据；这些样例不属于真实用户学习效果证据。浏览器 E2E 尚未加入 CI；保留一条既有 Starlette/httpx 弃用提示。提交后的远程 CI 由指向 main 的功能 PR 触发，检查 Frontend checks 与 Backend checks；旧 PR #4 CI 只证明旧提交。</p>
+</details>
 </section>
 <section id="decisions"><h2>02 · 已确认的方向，不重复问</h2>
-<ul><li><strong>毕业设计主线：</strong>学习行为分析与可解释复习策略；Agent 四项能力作为后续应用功能。暂无额外强制技术要求，沿用设计；时间较充裕，但未给出明确截止日与每周工时。</li><li><strong>每日题：</strong>同一学习方向、同一本地日期统一题目；完成状态属于各用户，个性化体现在复习队列。</li><li><strong>打卡：</strong>合法提交成功按提交日计入。未来 AI 延迟评分不改日期，失败不得记零分或撤销打卡（异步评分尚未实现）。</li><li><strong>初始规则：</strong>答错或自评“不会”次日复习，连续答对按 1、3、7、14 天递增；记录调度依据。当前仅接入单选题对错，无自评入口；规则效果仍待实验验证。</li><li><strong>界面偏好：</strong>简洁、平和、柔和灰绿与圆角，避免强烈 AI 宣传感；功能放左侧，右侧学习区宽一些并靠上。当前布局已接受，继续以功能为主。</li><li><strong>结果展示：</strong>答对、答错都不显示分数；后台判分继续用于调度。未登录先显示登录页，已有有效会话则恢复学习空间。</li></ul>
+<ul><li><strong>毕业设计主线：</strong>学习行为分析与可解释复习策略；Agent 四项能力作为后续应用功能。暂无额外强制技术要求，沿用设计；时间较充裕，但未给出明确截止日与每周工时。</li><li><strong>每日题：</strong>同一学习方向、同一本地日期统一题目；完成状态属于各用户，个性化体现在复习队列。</li><li><strong>打卡：</strong>合法提交成功按提交日计入。未来 AI 延迟评分不改日期，失败不得记零分或撤销打卡（异步评分尚未实现）。</li><li><strong>初始规则：</strong>答错或自评“不会”次日复习，连续答对按 1、3、7、14 天递增；记录调度依据。当前仅接入单选题对错，无自评入口；14 天封顶。规则效果仍待实验验证。</li><li><strong>复习规则已确认：</strong>每题每天最多正式复习一次，答错次日再来、当天可回看解析；最早到期优先，用户/题目仅一个计划，不按学习方向重复建计划；复习沿用上次作答版本。同日复习后又遇到同题每日题，第二次答对不重复推进阶段，答错仍重置次日。</li><li><strong>界面偏好：</strong>简洁、平和、柔和灰绿与圆角，避免强烈 AI 宣传感；功能放左侧，右侧学习区宽一些并靠上。当前布局已接受，继续以功能为主。</li><li><strong>结果展示：</strong>答对、答错都不显示分数；后台判分继续用于调度。未登录先显示登录页，已有有效会话则恢复学习空间。</li></ul>
 <p class="muted">原设计中的用户端、管理端和 Agent 答疑 / 出题 / 正式评分 / 规划仍属最终范围；分阶段实现不等于已经完成。术语以 <a href="../CONTEXT.md">CONTEXT.md</a> 为准。</p>
 </section>
 <section id="map"><h2>03 · 从哪里读代码</h2>
 <table><thead><tr><th>位置</th><th>职责 / 注意事项</th></tr></thead><tbody>
-<tr><td><code>frontend/src/App.vue</code><br><code>AuthPage.vue · session.ts</code></td><td>启动时恢复会话，决定显示登录页或学习空间；共享账号、CSRF 与 401 处理。当前按状态切换视图，未引入 Vue Router / Pinia，也没有独立 /login、/register 路由。</td></tr>
+<tr><td><code>frontend/src/App.vue</code><br><code>AuthPage.vue · session.ts</code></td><td>启动时恢复会话，决定显示登录页或学习空间；共享账号、CSRF 与 401 处理。按状态切换视图；使用 URL hash 保留功能、领域与详情 ID，刷新可恢复，无 Vue Router / Pinia，也没有独立 /login、/register 路由。</td></tr>
 <tr><td><code>LearningSpace.vue · style.css</code><br><code>DailyPractice.vue</code></td><td>侧栏、领域、全局退出与整体布局；每日题读取、提交、解析与重试。保留加载版本防旧响应覆盖、幂等键和原答案锁定。</td></tr>
 <tr><td><code>backend/app/auth.py</code></td><td>scrypt 密码；HttpOnly / SameSite=Strict Cookie 会话，7 天有效；认证写请求校验 CSRF。前端不在 localStorage 存凭据。</td></tr>
 <tr><td><code>backend/app/practice.py</code><br><code>models.py · seed.py</code></td><td>每日题、作答事务和复习调度；模型与样题。关注用户/每日题唯一性、固定题目版本、用户锁与跨天重试。</td></tr>
+<tr><td><code>backend/app/reviews.py</code><br><code>0003_personal_review.py</code></td><td>到期列表、复习提交、历史筛选与详情；迁移使每日题关联可空，并新增复习来源、上次作答与原定到期日。每天一次由数据库唯一约束保证；计划更新由用户锁串行化。</td></tr>
+<tr><td><code>ReviewPractice.vue · LearningHistory.vue</code><br><code>PracticeQuestion.vue · practice.css</code></td><td>复习、历史及共用题目结果显示；提交中禁止切换页面/领域/退出，读取使用版本号防旧响应覆盖；历史详情区分当次安排和当前计划。</td></tr>
 <tr><td><code>backend/tests/</code><br><code>tools/dev_mysql.py · compose.yaml</code></td><td>MySQL 迁移、隔离、并发、回滚与业务规则验证；Docker 启停和本地凭据生成。</td></tr>
 </tbody></table>
 <p>已运行：Vue 3 + TypeScript + Vite，Python 3.13 + FastAPI + SQLAlchemy/Alembic + PyMySQL，MySQL 8.0。Node 使用 22（≥22.12）；精确依赖以锁文件为准。DuckDB + Parquet 目前只是设计计划。</p>
@@ -53,15 +62,24 @@ $env:TEST_DATABASE_URL = (Get-Content ../build/docker/test.env -Raw).Trim().Subs
 Remove-Item Env:TEST_DATABASE_URL</pre><p>以上假设依赖已安装；新检出按<a href="开发与验证/本地开发与持续集成.html">本地开发与持续集成</a>配置。前后端在宿主机运行，数据库在 Docker 中；没有固定默认账号。</p></details>
 <details><summary>已遇到的环境问题，仅在复发时参考</summary><ul><li>Docker Desktop 曾因残留的 <code>dockerInference</code> / <code>engine.sock</code> 通信文件启动失败。先检查引擎和日志，不做恢复出厂或删除数据；历史处理是停止已失败的 Desktop 后重命名相应运行目录，让其重建。</li><li>Git 旧代理 127.0.0.1:7892 可能不可用。本轮通过直连 <code>ssh.github.com:443</code> 拉取/推送成功；仅用单次命令配置，不修改全局代理。</li><li>GitHub 连接器可读，但写操作返回 403；本轮通过已登录的 GitHub 浏览器按保护规则合并。工具权限失败不代表可以绕过主分支规则。</li><li>服务进程、端口、容器与远程分支会变化；下一对话必须现查，不能仅依赖交接时的运行状态。</li></ul></details>
 </section>
-<section id="next"><h2>05 · 下一对话怎样接上</h2>
-<p class="note"><strong>建议下一项：个人复习的完整流程。</strong>这是建议，用户尚未明确下达该功能的实施指令。先确认任务，再从最新主分支建分支。</p>
-<ol><li><strong>先澄清复习语义：</strong>同一天允许复习几次、错题何时可再答、到期排序与跨方向去重；这些还未决定。</li><li><strong>先看模型再写页面：</strong>当前 Attempt 必须关联每日题，并有用户/每日题唯一约束；复习重答不能直接复用每日提交接口或覆盖旧作答，需要设计新的练习来源/约束与迁移。</li><li><strong>最小验收：</strong>到期队列 → 重答 → 新作答记录 → 更新复习计划 → 刷新可恢复；再补学习记录。继续保留幂等、隔离、跨天和事务证据。</li><li><strong>之后：</strong>题库管理与发布 → 行为数据导出及 DuckDB 核对 → 可解释策略对照实验 → 分阶段接入 Agent。实际顺序由下一次需求决定。</li></ol>
-<details><summary>可直接发给新对话的开场</summary><pre>请先阅读 AGENTS.md、docs/项目现状与开发交接.html 和 CONTEXT.md，
-再按需读相关设计与验收文档。检查实际 Git 状态、远程 main 和未合并 PR，
-保留无关改动；数据库只能使用项目 Docker 容器。
-先简述已完成与待完成的边界，再根据我本次提出的功能继续，
-不要将交接文档中的“建议下一项”当成自动执行授权。</pre></details>
-<p>深入阅读：<a href="毕业设计启动指南.html">启动决策与路线</a> · <a href="个性化知识练习与复习系统_技术设计文档.html">原始技术设计</a> · <a href="开发与验证/每日练习功能与验收.html">功能与验收</a> · <a href="开发与验证/本地开发与持续集成.html">环境与 CI</a></p>
+<section id="next"><h2>05 · 下一步怎样接上</h2>
+<p class="note"><strong>本阶段已实现个人复习与学习记录，下一项建议是题库管理与版本发布。</strong>用户已要求复查、提交、推送功能分支、创建指向 main 的 PR 并等待 CI；尚未要求合并或上线。</p>
+<ol><li><strong>接续当前工作：</strong>检查 <code>feat/personal-review</code> 的工作区和远程 PR 状态；该分支包含已有交接提交 92e09b0（PR #5），保留此前置文档变更。合并前核对 origin/main 祖先、提交范围和当前提交的 CI，不自动合并 PR #5 或本功能 PR。</li>
+<li><strong>题库管理与发布：</strong>先确定管理员身份与权限，再做题目草稿、校验、不可变版本发布；用新版本不影响历史答案与既有复习为验收。现有样题仍通过 <code>app.seed</code> 导入。</li>
+<li><strong>之后：</strong>行为数据导出及 DuckDB 核对 → 可解释策略对照实验 → 分阶段接入 Agent。已有复习保留原定到期日、实际提交日、触发作答和规则版本，供后续分析使用。</li></ol>
+<details><summary>新接口、约束和迁移注意事项</summary>
+<table><thead><tr><th>接口</th><th>用途</th></tr></thead><tbody>
+<tr><td><code>GET /api/v1/reviews?domain_code=…</code></td><td>个人到期队列，按到期日和题目 ID 排序，offset / limit 分页；不返回答案。</td></tr>
+<tr><td><code>GET /api/v1/reviews/{question_id}</code></td><td>复习题详情、计划依据和是否可提交；当日已复习则恢复当次结果。</td></tr>
+<tr><td><code>POST /api/v1/reviews/{question_id}/attempts</code></td><td>题目版本、basis_attempt_id、答案和幂等键；过期计划拒绝提交，成功追加新作答。</td></tr>
+<tr><td><code>GET /api/v1/history</code></td><td>domain_code、source=all/daily/review、start_date/end_date；按 ID 倒序，before_id 游标分页。</td></tr>
+<tr><td><code>GET /api/v1/history/{attempt_id}</code></td><td>仅自己的原始题目版本、作答结果、原定复习日期与当前计划。</td></tr>
+</tbody></table>
+<p><code>Attempt.daily_assignment_id</code> 可空；复习记录填写 <code>review_question_id</code>、<code>review_basis_attempt_id</code>、<code>scheduled_due_date</code>。来源 CHECK 约束确保每日题与复习互斥，用户/复习题/本地日期唯一；原用户/每日题和用户/幂等键约束保留。<code>ReviewPlan</code> 仍以用户/题目为主键。题目目前属于一个学习方向，本轮没有新增多方向映射模型。</p>
+<p>调度规则版本更新为 <code>review-v2</code>，保留旧记录的 <code>review-v1</code>。每日题与复习共用事务写入函数，保存记录不会覆盖旧作答；查询历史显示当次安排，同时另列当前计划。列表每页 20 条；复习列表切换分页，历史列表加载更多。筛选条件和列表分页暂不持久化，URL 只保存当前功能、领域和详情定位。</p>
+<p><strong>迁移回退：</strong>无复习数据时已验证 downgrade/upgrade；产生复习记录后，迁移会明确拒绝降级，避免丢失复习数据。不要删除用户作答来强行降级，必须先制定保留数据的回退方案。当前未验证旧应用在新结构上的完整可用性。</p>
+</details>
+<p>深入阅读：<a href="毕业设计启动指南.html">启动决策与路线（历史设计）</a> · <a href="个性化知识练习与复习系统_技术设计文档.html">原始技术设计</a> · <a href="开发与验证/每日练习功能与验收.html">每日练习验收</a> · <a href="开发与验证/本地开发与持续集成.html">环境与 CI</a></p>
 </section>
 </main><footer>后续维护本文件，更新日期、已合并基准与下一步；历史方案作为设计参考，不以“计划”冒充现状。本页不保存凭据或个人学习明细。</footer>
 </body></html>
