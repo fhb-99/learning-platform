@@ -2,7 +2,7 @@
 
 基于学习行为分析的毕业设计，主要研究学习行为分析与可解释复习策略。
 
-核心技术栈：Vue 3 + TypeScript、Python FastAPI、MySQL、DuckDB + Parquet。当前已实现基础账号登录、单选每日题、后端判分、提交日打卡、个人到期复习、学习记录与最小 CI；个人复习和学习记录已通过 PR #6 合入 main。题库管理、管理员授权和不可变版本发布已通过 [PR #7](https://github.com/fhb-99/learning-platform/pull/7) 合入 main。个人学习数据导出与 DuckDB 一致性核对已在 `feat/learning-data-export` 本地实现，52 项后端测试、前端检查及浏览器下载验收通过，尚未提交、推送或创建 PR。分析报表、策略实验与 CD 尚未实施；当前状态和验证边界见交接文档。
+核心技术栈：Vue 3 + TypeScript、Python FastAPI、MySQL、DuckDB + Parquet。当前已实现基础账号登录、单选每日题、后端判分、提交日打卡、个人到期复习、学习记录与最小 CI；个人复习和学习记录已通过 PR #6 合入 main。题库管理、管理员授权和不可变版本发布已通过 [PR #7](https://github.com/fhb-99/learning-platform/pull/7) 合入 main。个人学习数据导出与 DuckDB 一致性核对已在 `feat/learning-data-export` 实现并创建 [PR #8](https://github.com/fhb-99/learning-platform/pull/8)，尚未合并；52 项后端测试、前端检查及浏览器下载验收通过，远程 CI 见 [PR 检查页](https://github.com/fhb-99/learning-platform/pull/8/checks)。分析报表、策略实验与 CD 尚未实施；当前状态和验证边界见交接文档。
 
 ## 阅读入口
 
