@@ -1,6 +1,6 @@
 import { shallowRef } from 'vue'
 
-export type Account = { username: string; timezone: string; csrf_token: string }
+export type Account = { username: string; timezone: string; csrf_token: string; is_admin: boolean }
 export const account = shallowRef<Account | null>(null)
 export const sessionNotice = shallowRef('')
 

@@ -2,6 +2,7 @@ from datetime import date, datetime
 
 from sqlalchemy import (
     JSON,
+    Boolean,
     CheckConstraint,
     Date,
     DateTime,
@@ -30,6 +31,7 @@ class User(Base):
     username: Mapped[str] = mapped_column(String(32), unique=True)
     password_hash: Mapped[str] = mapped_column(String(256))
     timezone: Mapped[str] = mapped_column(String(64), default="Asia/Singapore")
+    is_admin: Mapped[bool] = mapped_column(Boolean, default=False, server_default="0")
 
 
 class AuthSession(Base):
@@ -66,6 +68,22 @@ class QuestionVersion(Base):
     explanation: Mapped[str] = mapped_column(Text)
     source: Mapped[str] = mapped_column(String(255))
     published_at: Mapped[datetime] = mapped_column(DateTime)
+    published_by: Mapped[int | None] = mapped_column(ForeignKey("users.id"))
+
+
+class QuestionDraft(Base):
+    __tablename__ = "question_drafts"
+    question_id: Mapped[int] = mapped_column(ForeignKey("questions.id"), primary_key=True)
+    revision: Mapped[int]
+    stem: Mapped[str] = mapped_column(Text)
+    options: Mapped[list] = mapped_column(JSON)
+    correct_answer: Mapped[str] = mapped_column(String(1))
+    explanation: Mapped[str] = mapped_column(Text)
+    source: Mapped[str] = mapped_column(String(255))
+    updated_at: Mapped[datetime] = mapped_column(DateTime)
+    updated_by: Mapped[int] = mapped_column(ForeignKey("users.id"))
+    # 保留发布对应关系，使同一修订号的发布重试返回同一版本。
+    published_version_id: Mapped[int | None] = mapped_column(ForeignKey("question_versions.id"))
 
 
 class DailyAssignment(Base):

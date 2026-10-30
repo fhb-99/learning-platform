@@ -3,6 +3,7 @@ import { computed, onMounted, ref, watch } from 'vue'
 import DailyPractice from './DailyPractice.vue'
 import ReviewPractice from './ReviewPractice.vue'
 import LearningHistory from './LearningHistory.vue'
+import QuestionAdmin from './QuestionAdmin.vue'
 import { account, api, errorMessage } from './session'
 
 const loggingOut = ref(false)
@@ -31,18 +32,19 @@ const message = ref('正在连接服务…')
 const checkedAt = ref('尚未检查')
 const serviceDetails = ref<HTMLDetailsElement | null>(null)
 const submittingAnswer = ref(false)
-const sections = [
+const sections = computed(() => [
   { id: 'practice', name: '每日练习', intro: '从感兴趣的领域开始，专注于今天的学习。', icon: 'M5 4h10l4 4v12H5z M14 4v5h5 M9 13h6 M9 17h4' },
   { id: 'review', name: '个人复习', intro: '留一点时间，回顾已经学过的知识。', icon: 'M5 8a8 8 0 1 1-1 7 M5 3v5h5 M12 8v5l3 2' },
   { id: 'history', name: '学习记录', intro: '在这里回看每一次练习与复习。', icon: 'M5 4h14v16H5z M9 8h6 M9 12h6 M9 16h4' },
-] as const
+  ...(account.value?.is_admin ? [{ id: 'admin', name: '题库管理', intro: '整理题目，审核内容，发布新的版本。', icon: 'M5 4h14v16H5z M8 8h8 M8 12h8 M8 16h4' }] : []),
+])
 const savedView = initialView.get('view')
-const activeSection = ref<(typeof sections)[number]['id']>(savedView === 'review' || savedView === 'history' ? savedView : 'practice')
+const activeSection = ref(sections.value.some(section => section.id === savedView) ? savedView! : 'practice')
 watch([activeSection, selectedCode], () => {
   const params = new URLSearchParams({ view: activeSection.value, domain: selectedCode.value })
   history.replaceState(null, '', `#${params}`)
 })
-const currentSection = computed(() => sections.find(section => section.id === activeSection.value)!)
+const currentSection = computed(() => sections.value.find(section => section.id === activeSection.value)!)
 
 function showServiceDetails() {
   if (!serviceDetails.value) return
@@ -129,7 +131,8 @@ onMounted(checkConnection)
             <template v-if="ready && selectedDomain">
               <DailyPractice v-if="activeSection === 'practice'" :domain-code="selectedCode" @busy="submittingAnswer = $event" />
               <ReviewPractice v-else-if="activeSection === 'review'" :domain-code="selectedCode" @busy="submittingAnswer = $event" />
-              <LearningHistory v-else :domain-code="selectedCode" />
+              <LearningHistory v-else-if="activeSection === 'history'" :domain-code="selectedCode" />
+              <QuestionAdmin v-else-if="activeSection === 'admin' && account?.is_admin" :domain-code="selectedCode" @busy="submittingAnswer = $event" />
             </template>
             <div v-else class="empty-state connection-state">
               <span class="state-symbol" aria-hidden="true">{{ loading ? '…' : ready ? '＋' : '!' }}</span>

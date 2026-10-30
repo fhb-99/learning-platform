@@ -76,7 +76,12 @@ AuthenticatedUser = Annotated[User, Depends(current_user)]
 
 
 def account_response(user: User, token: str):
-    return {"username": user.username, "timezone": user.timezone, "csrf_token": csrf_token(token)}
+    return {
+        "username": user.username,
+        "timezone": user.timezone,
+        "csrf_token": csrf_token(token),
+        "is_admin": user.is_admin,
+    }
 
 
 def establish_session(session: Session, user: User, request: Request, response: Response):
