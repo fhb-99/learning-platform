@@ -11,10 +11,16 @@
 <header><small>交接基准：2026-10-30 · Asia/Singapore · 唯一维护入口</small><h1>项目现状与开发交接</h1><p>先读这一页，再读对应模块文档。目标是接续当前实现与决策，不重新做一轮项目规划。</p><nav aria-label="交接导航"><a href="#now">现在到哪了</a><a href="#decisions">已确认方向</a><a href="#map">代码定位</a><a href="#run">运行与规范</a><a href="#next">下一步</a></nav></header>
 <main>
 <section id="now"><h2>01 · 现在到哪了</h2>
-<p class="note"><strong>个人学习数据导出与 DuckDB 核对已通过 <a href="https://github.com/fhb-99/learning-platform/pull/8">PR #8</a> 合入 main，本页为该阶段合入后的交接基准。</strong><br>本人指定日期的 Parquet 导出、默认隐藏作答选项、MySQL 一致性快照与 DuckDB 下载前核对均已集成。功能提交为 <code>bc298ed</code>；前置交接提交 <code>7f96901</code> 的 <a href="https://github.com/fhb-99/learning-platform/actions/runs/41052120540">Frontend checks 与 Backend checks</a> 均通过。本次合入包含交接状态更新，最终提交检查与合并提交见 <a href="https://github.com/fhb-99/learning-platform/pull/8/checks">PR #8 检查页</a>及 PR 时间线。本地全量 52 项测试、Ruff、前端类型检查与构建通过；真实浏览器下载核对另列于下文。没有新增数据库迁移，尚未部署。继续开发前检查工作区、fetch，从最新 origin/main 创建新的功能分支。</p>
-<div class="flow" aria-label="已实现流程"><span>独立注册 / 登录</span><span>领域与方向</span><span>统一每日题</span><span>提交与判分</span><span>解析 / 打卡 / 复习日期</span><span>到期重新作答</span><span>学习记录 / 刷新恢复</span><span>管理员草稿 / 审核发布 / 版本历史</span><span>个人数据导出 / DuckDB 核对</span></div>
-<div class="grid"><div><h3><span class="tag">已实现</span></h3><ul><li>Vue 用户端：左侧功能列表；独立登录/注册视图、确认密码、退出和失效返回登录。</li><li>计算机、英语各 6 道自编单选样题；当天首次提交、幂等重试、答案提交后可见。</li><li>每日题与复习作答、规则成绩、打卡、复习计划在 MySQL 同一事务落库。</li><li>个人复习：领域过滤、到期/逾期排序与分页、重答、解析、同题每天一次、刷新恢复。</li><li>学习记录：按领域、来源和本地日期筛选；游标分页；查看原题版本、原答案、当次安排及当前计划。</li><li>题库管理：按领域/方向浏览、新建与修改草稿、发布完整四选一题目、分页回看只读版本；冲突拒绝覆盖、同修订发布重试幂等。</li><li>普通用户/管理员两级权限；默认普通账号，本机命令授予或撤销已有账号权限，每次请求重新鉴权。</li><li>个人数据导出：指定日期、默认隐藏答案、批次引用、Parquet/ZIP、MySQL 快照与 DuckDB 核对；已通过 PR #8 合入 main。</li><li>Docker 开发/测试库隔离；两项 CI 为 main 合并门禁。</li></ul></div><div><h3><span class="tag pending">尚未实现</span></h3><ul><li>题目停用/纠错迁移、批量导入、学习方向管理、网页账号授权和完整管理操作审计；当前只支持四选一题型。</li><li>简答题、AI 评分、自评、Agent、行为汇总报表和策略对照实验。</li><li>密码找回、账号管理、上线限流审计；尚未部署，CD 暂不做。</li></ul></div></div>
-<details open><summary>本轮导出功能的验证证据（2026-10-30）</summary>
+<p class="note"><strong>个人学习行为汇总与统计口径核对通过 <a href="https://github.com/fhb-99/learning-platform/pull/9">PR #9</a> 合入 <code>main</code>；本状态更新随该 PR 一并交付。</strong><br>功能提交 <code>dfdfa98</code>，功能分支 <code>feat/personal-learning-summary</code> 从已包含 PR #8 的 <code>4d234e8</code> 开始。新增仅本人、全部领域的学习频率、作答正确率、已完成复习按期率、日趋势与分类明细；从核对通过的 Parquet 汇总，再与同一 MySQL 快照的原始记录独立重算比较。62 项后端测试、Ruff、前端检查与浏览器验收通过；最终远程 CI 和合并记录见 <a href="https://github.com/fhb-99/learning-platform/pull/9/checks">PR #9 检查页</a>及 PR 页面。本轮没有数据库迁移，没有部署；下一阶段从最新 <code>origin/main</code> 创建新功能分支。</p>
+<div class="flow" aria-label="已实现流程"><span>独立注册 / 登录</span><span>领域与方向</span><span>统一每日题</span><span>提交与判分</span><span>解析 / 打卡 / 复习日期</span><span>到期重新作答</span><span>学习记录 / 刷新恢复</span><span>管理员草稿 / 审核发布 / 版本历史</span><span>个人数据导出 / DuckDB 核对</span><span>学习汇总 / 统计口径核对</span></div>
+<div class="grid"><div><h3><span class="tag">已实现</span></h3><ul><li>Vue 用户端：左侧功能列表；独立登录/注册视图、确认密码、退出和失效返回登录。</li><li>计算机、英语各 6 道自编单选样题；当天首次提交、幂等重试、答案提交后可见。</li><li>每日题与复习作答、规则成绩、打卡、复习计划在 MySQL 同一事务落库。</li><li>个人复习：领域过滤、到期/逾期排序与分页、重答、解析、同题每天一次、刷新恢复。</li><li>学习记录：按领域、来源和本地日期筛选；游标分页；查看原题版本、原答案、当次安排及当前计划。</li><li>题库管理：按领域/方向浏览、新建与修改草稿、发布完整四选一题目、分页回看只读版本；冲突拒绝覆盖、同修订发布重试幂等。</li><li>普通用户/管理员两级权限；默认普通账号，本机命令授予或撤销已有账号权限，每次请求重新鉴权。</li><li>个人数据导出：指定日期、默认隐藏答案、批次引用、Parquet/ZIP、MySQL 快照与 DuckDB 核对；已通过 PR #8 合入 main。</li><li>个人学习汇总：指定日期、整体/类型/领域/逐日统计、原始记录核对、截止时间与口径说明；已通过 PR #9 合入 main。</li><li>Docker 开发/测试库隔离；两项 CI 为 main 合并门禁。</li></ul></div><div><h3><span class="tag pending">尚未实现</span></h3><ul><li>题目停用/纠错迁移、批量导入、学习方向管理、网页账号授权和完整管理操作审计；当前只支持四选一题型。</li><li>简答题、AI 评分、自评、Agent、所有到期任务的历史完成率、策略对照实验和预计算报表任务。</li><li>密码找回、账号管理、上线限流审计；尚未部署，CD 暂不做。</li></ul></div></div>
+<details open><summary>本轮个人汇总的验证证据（2026-10-30）</summary>
+<p><strong>复查与自动测试：</strong>再次检查统计分母、历史成绩与原定日期、身份隔离、快照一致性和失败清理，未发现阻塞问题。2026-10-30 复跑 Docker 独立 MySQL 测试库全量 <strong>62 项 pytest 通过</strong>（原有 52 项 + 统计 10 项），Ruff、前端类型检查与生产构建通过。新增覆盖本人隔离（含管理员）、未知筛选拒绝、按作答次数加权、跨领域同日去重、幂等重试、历史版本与计划变动、范围外原定复习日、实际本地日期、空范围、零正确率与零分母、366 天边界、未来日期、并发快照、错误聚合拦截、文件异常清理、共享并发名额及数量上限。</p>
+<p><strong>人工可复算样本：</strong>4 个日历日内 5 次作答，分布为 2、1、0、2 次；3 个学习日，3 次正确，3 次复习中 1 次按期、2 次逾期。结果为学习频率 75%、日均 1.25 次、正确率 60%、已完成复习按期率 33.33%。计算机 3 次作答正确 2 次、英语 2 次作答正确 1 次；整体正确率不能取领域百分比平均，整体学习天数也不能相加领域天数。</p>
+<p><strong>真实浏览器：</strong>内置浏览器 + Docker 开发库，已有专用验收账号实测默认 30 日汇总、无作答日期的空状态、未来日期禁用查询、单日重新查询及展开逐日明细。页面的 2 次作答、1 个学习日、2 次正确、0 次复习与独立 MySQL SQL 核对一致；30 日学习频率 3.33%、正确率 100%、复习按期率显示“暂无数据”。桌面截图已查看；本轮未完成窄屏视觉验收。复习按期/逾期的混合样例由 MySQL 集成测试覆盖，未在开发库新增模拟历史作答。</p>
+<p><strong>证据与边界：</strong>测试位于 <code>backend/tests/test_analytics.py</code>，页面截图及原始记录核对摘要位于已忽略的 <code>build/verification/summary/</code>。既有 13 项导出测试一并通过，导出文件格式保持不变。保留既有 Starlette/httpx 弃用提示；浏览器 E2E 尚未接入 CI，未做生产容量压测。指标证明计算一致，不证明复习策略提高学习效果。</p>
+</details>
+<details><summary>上一阶段：数据导出与核对的验证证据（PR #8 已合入）</summary>
 <p><strong>自动测试：</strong>Docker 独立 MySQL 测试库全量 <strong>52 项 pytest 通过</strong>（原有 39 项 + 导出 13 项），Ruff、前端类型检查与生产构建通过。新增验证登录与 CSRF、禁止指定他人、管理员仍只导出本人、两领域数据、原题版本、默认空答案与主动包含、跨批次编号变化、UTC/本地日期边界、范围外关联、当前计划、空文件、日期与条数限制、并发繁忙返回、核对失败拒绝交付和临时文件清理。</p>
 <p><strong>一致性与故障：</strong>在快照首次读取之后插入另一份正式作答，本次导出仍只看到原记录，下次导出才包含新记录。注入字段值损坏、字段缺失、写盘前聚合差异、断裂引用和文件写入失败，均拒绝下载；随后正常导出成功，证明并发名额和临时目录可回收。逐行核对覆盖默认脱敏后的白名单投影；独立 MySQL 聚合额外比较每日/领域/来源的作答数、正确数与成绩合计。</p>
 <p><strong>真实浏览器与下载文件：</strong>内置浏览器 + 本机开发服务 + Docker 开发库，使用已有专用验收账号完成登录 → 数据导出 → 默认下载 → 超范围按钮禁用 → 勾选作答选项后下载。下载 ZIP 再由 DuckDB 读取，验收样例为 2 次作答、1 次打卡、2 个当前计划；与 MySQL 原记录的版本、成绩和主动包含的选项一致，默认选项全为 NULL。桌面完整截图已查看，共用样式遗漏已修正并复核；本轮没有完成窄屏视觉验收。</p>
@@ -45,9 +51,11 @@
 <tr><td><code>frontend/src/QuestionAdmin.vue</code></td><td>题库列表、草稿、发布确认和只读历史；未保存提示、过期响应隔离、保存/发布失败反馈。管理入口按会话权限显示，服务端仍独立鉴权。</td></tr>
 <tr><td><code>backend/app/exports.py</code><br><code>backend/tests/test_exports.py</code></td><td>本人范围、MySQL 一致性快照、白名单与批次引用、DuckDB 生成/重读 Parquet、独立 SQL 聚合核对、ZIP 返回与临时目录清理。无数据库迁移。</td></tr>
 <tr><td><code>frontend/src/LearningExport.vue</code><br><code>session.ts</code></td><td>日期、答案开关、隐私与当前计划说明；核对下载、忙碌状态、会话隔离和错误反馈。JSON 与文件请求共用鉴权处理，导出等待上限 60 秒。</td></tr>
+<tr><td><code>backend/app/analytics.py</code><br><code>backend/tests/test_analytics.py</code></td><td>个人汇总口径、DuckDB 分组统计、MySQL 原始记录独立重算与失败拦截。exports.py 新增 verified_snapshot 上下文，导出与汇总共用同一快照/核对/临时文件清理流程。</td></tr>
+<tr><td><code>frontend/src/LearningSummary.vue</code></td><td>学习汇总入口、日期筛选、三项指标分子/分母、趋势与逐日/领域/类型明细、空状态及口径说明；旧响应隔离，结果标题显示已应用范围。</td></tr>
 <tr><td><code>backend/tests/</code><br><code>tools/dev_mysql.py · compose.yaml</code></td><td>MySQL 迁移、隔离、并发、回滚与业务规则验证；Docker 启停和本地凭据生成。</td></tr>
 </tbody></table>
-<p>已运行：Vue 3 + TypeScript + Vite，Python 3.13 + FastAPI + SQLAlchemy/Alembic + PyMySQL，MySQL 8.0；DuckDB 2.0.0 已用于 Parquet 生成与核对。Node 使用 22（≥22.12）；精确依赖以锁文件为准。行为分析报表与策略实验仍未实现。</p>
+<p>已运行：Vue 3 + TypeScript + Vite，Python 3.13 + FastAPI + SQLAlchemy/Alembic + PyMySQL，MySQL 8.0；DuckDB 2.0.0 已用于 Parquet 生成与核对。Node 使用 22（≥22.12）；精确依赖以锁文件为准。个人汇总已实现；预计算任务与策略实验仍未实现。</p>
 </section>
 <section id="run"><h2>04 · 运行与协作底线</h2>
 <p><strong>仓库：</strong><code>E:\project\learning-platform</code> · <a href="https://github.com/fhb-99/learning-platform">fhb-99/learning-platform</a>（公开）。Git 顶层必须是本项目，不操作上层 <code>E:\project</code>。</p>
@@ -73,9 +81,20 @@ Remove-Item Env:TEST_DATABASE_URL</pre><p>以上假设依赖已安装；新检�
 <details><summary>已遇到的环境问题，仅在复发时参考</summary><ul><li>Docker Desktop 曾因残留的 <code>dockerInference</code> / <code>engine.sock</code> 通信文件启动失败。先检查引擎和日志，不做恢复出厂或删除数据；历史处理是停止已失败的 Desktop 后重命名相应运行目录，让其重建。</li><li>Git 旧代理 127.0.0.1:7892 可能不可用。此前通过直连 <code>ssh.github.com:443</code> 拉取/推送成功；仅用单次命令配置，不修改全局代理。</li><li>GitHub 连接器可读，但写操作返回 403；PR #7 通过已登录的 GitHub 浏览器按保护规则合并。工具权限失败不代表可以绕过主分支规则。</li><li>服务进程、端口、容器与远程分支会变化；下一对话必须现查，不能仅依赖交接时的运行状态。</li></ul></details>
 </section>
 <section id="next"><h2>05 · 下一步怎样接上</h2>
-<p class="note"><strong>行为数据导出与核对阶段已交付，下一步建议是个人学习行为汇总与统计口径核对。</strong>用户已授权合并 PR #8、同步本地 main 并更新本页；尚未授权开始下一阶段实现或部署。</p>
-<ol><li><strong>接续当前工作：</strong>确认工作区干净，fetch 并使本地 <code>main</code> 与 <code>origin/main</code> 同步；PR #8 的功能与交接正文均已包含在主分支。后续新功能从最新主分支创建新的 feat/*、fix/* 或 chore/* 分支，不继续使用已合并的 <code>feat/learning-data-export</code>。不要将已忽略的下载文件和个人记录加入 Git。</li><li><strong>建议下一阶段：</strong>基于已核对的 Parquet 定义学习频率、正确率、复习按期率等指标，先做个人汇总并核对统计口径，再准备规则对照实验。本人数据导出不等于授权管理员收集全部人的明细；研究数据范围、试用授权和实验设计需另行确定。</li><li><strong>之后：</strong>可解释策略对照实验 → 分阶段接入 Agent。题目停用、纠错迁移、批量导入及管理操作审计仍未实现。</li></ol>
-<details open><summary>个人数据导出：使用方法、数据范围与隐私约定</summary>
+<p class="note"><strong>个人学习汇总阶段完成；建议下一步进入策略对照实验设计。</strong>本轮用户已授权合并 PR #9、同步本地主分支和更新交接；下一阶段实现及部署尚未授权。</p>
+<ol><li><strong>接续当前工作：</strong>PR #9 已交付到 main；新会话先核对工作区、远程分支图与最新 origin/main，再从主分支创建新的功能分支。不要继续在已合并的个人汇总分支追加开发，也不要将 build/ 内的个人记录、截图和实验产物加入 Git。</li><li><strong>建议下一阶段：</strong>设计可解释复习规则的对照实验，先明确样本、指标、基线和试用授权；将公开数据实验与本站真实学习记录分开。现有按期率针对已完成复习；若要统计所有应到期任务的历史完成率，先定义每日题覆盖计划、延期、未完成和期末观察窗口的规则，再实现相应历史计划记录，不能把当前队列当历史分母。</li><li><strong>之后：</strong>规则实验 → 分阶段接入 Agent。预计算汇总、定时任务、账号时区修改、题目停用、纠错迁移、批量导入及完整管理审计仍未实现。</li></ol>
+<details open><summary>个人学习汇总：统计口径、核对方法与使用边界</summary>
+<p>左侧“学习汇总”默认查询最近 30 个本地日历日（含今天），可修改开始/结束日期后点击“查看汇总”。范围首尾包含，最多 366 天、10,000 条作答，不接受未来日期；整体包含本人全部领域。结果标明已应用日期与快照截止时间，包含今天时提醒当日尚未结束；没有自动刷新，新的作答需重新查询。</p>
+<table><thead><tr><th>指标</th><th>分子 / 分母</th><th>特别注意</th></tr></thead><tbody>
+<tr><td>学习频率</td><td>至少一次正式作答的不同本地日期数 / 范围内全部日历天数 × 100%</td><td>跨领域同一天只算 1 天，休息日仍在分母内；日均作答 = 正式作答总次数 / 日历天数。没有记录时频率为 0%，不是登录频率，也不推算停留时长。</td></tr>
+<tr><td>作答正确率</td><td>原成绩为 100 的作答次数 / 正式作答总次数 × 100%</td><td>当前四选一题型只有 0/100；复习同一题的多次合法作答分别计数，幂等重试不新增记录。分母为 0 时返回 null / 显示“暂无数据”；0 次正确且有作答时才显示 0%。不取领域正确率平均，不使用最新题目答案重判历史。出现非 0/100 成绩时拒绝返回汇总，新增题型或待评分状态需先扩展口径。</td></tr>
+<tr><td>已完成复习按期率</td><td>实际本地作答日期 ≤ 当次 scheduled_due_date 的复习次数 / 范围内已完成个人复习次数 × 100%</td><td>以实际作答日归属范围，原定复习日可以在范围外；晚于原定日期算逾期。仅 source=review，排除每日题、未作答的计划和当前计划日期；不是所有到期任务完成率。没有已完成复习时为 null。</td></tr>
+</tbody></table>
+<p><strong>接口：</strong><code>GET /api/v1/analytics/me?start_date=YYYY-MM-DD&amp;end_date=YYYY-MM-DD</code>，仅 Cookie 当前用户（管理员亦同），拒绝 user_id、username、domain_code 等未支持参数。返回 <code>learning-summary-v1</code>、快照 UTC 时间、时区、范围、日历天数、是否含今天、整体/来源/领域/逐日指标及核对状态。每日序列补齐无作答日期；来源固定列出 daily/review，领域只列有作答的领域。所有比例保留最多两位小数，同时返回原始计数。</p>
+<p><strong>两层核对：</strong>复用上一阶段的 MySQL REPEATABLE READ 快照，获取原始记录、打卡、计划和独立 SQL 汇总；生成并重读 Parquet，先通过字段、逐行、引用、SQL 汇总核对。DuckDB 再计算整体/日期/领域/来源指标，Python 直接用同一 MySQL 快照原始记录独立重算计数，并校验整体学习天数与打卡天数一致。任何差异或文件异常都返回 503，不显示部分成功的统计。测试另用已知业务操作和手算值验证指标，避免只比较两个同源错误结果。</p>
+<p><strong>范围与资源：</strong>本轮采用按需计算，不写回汇总表、不增加迁移、定时任务或缓存；保留原始学习事实不变。与导出共用每进程 2 个并发名额，超过返回 429；超过条数返回 413，不截断数据。DuckDB 单线程、128MB 内存预算，临时文件在本项目 build/exports/ 内，退出上下文后清理；保留上一阶段的崩溃清理与全局限流边界。汇总响应不包含作答选项、题目正文、账号 ID 或个人明细，使用 no-store；前端等待上限 60 秒，切换页面/账号后的旧响应不会展示。</p>
+</details>
+<details><summary>个人数据导出：使用方法、数据范围与隐私约定</summary>
 <p>登录后选择左侧“数据导出”，填写开始/结束日期，按需勾选“同时包含我提交的作答选项”，点击“核对并下载”。包含当前账号所有领域，日期按入库时的 <code>Attempt.local_date</code> 筛选，首尾日期均包含；最多 366 天、10,000 条作答，超出时整批拒绝，请缩小范围。空范围仍返回有类型的空 Parquet 和通过报告。</p>
 <p><code>POST /api/v1/exports</code> 请求仅接受 <code>start_date</code>、<code>end_date</code>、<code>include_answers</code>（默认 false）；沿用 Cookie 登录与 CSRF，不接受 user_id、username 或管理员代选账号。成功响应为 ZIP，使用 <code>Cache-Control: no-store</code>，无公开下载地址或持久化任务记录。</p>
 <table><thead><tr><th>文件</th><th>范围与关键字段</th></tr></thead><tbody>
