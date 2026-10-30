@@ -2,7 +2,7 @@
 
 基于学习行为分析的毕业设计，主要研究学习行为分析与可解释复习策略。
 
-核心技术栈：Vue 3 + TypeScript、Python FastAPI、MySQL、DuckDB + Parquet。当前已实现基础账号登录、单选每日题、后端判分、提交日打卡、个人到期复习、学习记录与最小 CI；个人复习和学习记录已通过 PR #6 合入 main。题库管理、管理员授权和不可变版本发布已通过 [PR #7](https://github.com/fhb-99/learning-platform/pull/7) 合入 main。个人学习数据导出与 DuckDB 一致性核对已通过 [PR #8](https://github.com/fhb-99/learning-platform/pull/8) 合入 main；52 项后端测试、前端检查及浏览器下载验收通过，最终远程 CI 见 [PR 检查页](https://github.com/fhb-99/learning-platform/pull/8/checks)。个人学习汇总已在 `feat/personal-learning-summary` 本地实现，62 项后端测试、前端检查与浏览器验收通过，尚未提交、推送或创建 PR。策略实验、预计算汇总与 CD 尚未实施；统计口径和验证边界见交接文档。
+核心技术栈：Vue 3 + TypeScript、Python FastAPI、MySQL、DuckDB + Parquet。当前已实现基础账号登录、单选每日题、后端判分、提交日打卡、个人到期复习、学习记录与最小 CI；个人复习和学习记录已通过 PR #6 合入 main。题库管理、管理员授权和不可变版本发布已通过 [PR #7](https://github.com/fhb-99/learning-platform/pull/7) 合入 main。个人学习数据导出与 DuckDB 一致性核对已通过 [PR #8](https://github.com/fhb-99/learning-platform/pull/8) 合入 main；52 项后端测试、前端检查及浏览器下载验收通过，最终远程 CI 见 [PR 检查页](https://github.com/fhb-99/learning-platform/pull/8/checks)。个人学习汇总已复查并推送至 `feat/personal-learning-summary`，已创建指向 main 的 [PR #9](https://github.com/fhb-99/learning-platform/pull/9)，尚未合并。62 项后端测试、前端检查与浏览器验收通过；远程 CI 以 [PR #9 最新提交检查页](https://github.com/fhb-99/learning-platform/pull/9/checks) 为准。策略实验、预计算汇总与 CD 尚未实施；统计口径和验证边界见交接文档。
 
 ## 阅读入口
 
