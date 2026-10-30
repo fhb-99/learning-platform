@@ -5,6 +5,7 @@ import json
 import secrets
 import tempfile
 import zipfile
+from contextlib import contextmanager
 from datetime import date
 from pathlib import Path
 from threading import BoundedSemaphore
@@ -254,7 +255,8 @@ def verify_parquet(db, directory, rows, mysql_aggregates):
     }
 
 
-def build_archive(engine, user_id, options):
+@contextmanager
+def verified_snapshot(engine, user_id, options):
     info, attempts, check_ins, plans, aggregates = read_snapshot(engine, user_id, options)
     rows = export_rows(attempts, check_ins, plans)
     EXPORT_ROOT.mkdir(parents=True, exist_ok=True)
@@ -268,6 +270,12 @@ def build_archive(engine, user_id, options):
             }
         ) as db:
             report = verify_parquet(db, directory, rows, aggregates)
+            # 导出与汇总共用已验证的文件、快照及清理边界，格式保持不变。
+            yield info, db, report, directory, attempts
+
+
+def build_archive(engine, user_id, options):
+    with verified_snapshot(engine, user_id, options) as (info, _, report, directory, _):
         manifest = {
             "schema_version": "learning-export-v1",
             "export_id": secrets.token_hex(16),

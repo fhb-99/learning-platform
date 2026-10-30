@@ -29,8 +29,8 @@ async function request(path: string, options: RequestInit, timeout: number): Pro
   return response
 }
 
-export async function api<T>(path: string, options: RequestInit = {}): Promise<T> {
-  const response = await request(path, options, 12000)
+export async function api<T>(path: string, options: RequestInit = {}, timeout = 12000): Promise<T> {
+  const response = await request(path, options, timeout)
   return (response.status === 204 ? null : await response.json()) as T
 }
 

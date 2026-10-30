@@ -11,6 +11,7 @@ from sqlalchemy.engine import Engine
 from sqlalchemy.exc import SQLAlchemyError
 
 from app.admin import router as admin_router
+from app.analytics import router as analytics_router
 from app.auth import router as auth_router
 from app.config import Settings
 from app.database import create_db_engine
@@ -56,6 +57,7 @@ def create_app(engine: Engine | None = None) -> FastAPI:
     app.include_router(reviews_router)
     app.include_router(admin_router)
     app.include_router(exports_router)
+    app.include_router(analytics_router)
 
     @app.exception_handler(RequestValidationError)
     async def invalid_request(request: Request, error: RequestValidationError):

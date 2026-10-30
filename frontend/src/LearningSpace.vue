@@ -4,6 +4,7 @@ import DailyPractice from './DailyPractice.vue'
 import ReviewPractice from './ReviewPractice.vue'
 import LearningHistory from './LearningHistory.vue'
 import LearningExport from './LearningExport.vue'
+import LearningSummary from './LearningSummary.vue'
 import QuestionAdmin from './QuestionAdmin.vue'
 import { account, api, errorMessage } from './session'
 
@@ -37,6 +38,7 @@ const sections = computed(() => [
   { id: 'practice', name: '每日练习', intro: '从感兴趣的领域开始，专注于今天的学习。', icon: 'M5 4h10l4 4v12H5z M14 4v5h5 M9 13h6 M9 17h4' },
   { id: 'review', name: '个人复习', intro: '留一点时间，回顾已经学过的知识。', icon: 'M5 8a8 8 0 1 1-1 7 M5 3v5h5 M12 8v5l3 2' },
   { id: 'history', name: '学习记录', intro: '在这里回看每一次练习与复习。', icon: 'M5 4h14v16H5z M9 8h6 M9 12h6 M9 16h4' },
+  { id: 'summary', name: '学习汇总', intro: '看见学习的节奏，也看清每个数字的依据。', icon: 'M4 20h16 M7 16v-5 M12 16V5 M17 16V8' },
   { id: 'export', name: '数据导出', intro: '按日期保存自己的学习记录，下载前自动核对。', icon: 'M12 3v12 M7 10l5 5 5-5 M5 16v5h14v-5' },
   ...(account.value?.is_admin ? [{ id: 'admin', name: '题库管理', intro: '整理题目，审核内容，发布新的版本。', icon: 'M5 4h14v16H5z M8 8h8 M8 12h8 M8 16h4' }] : []),
 ])
@@ -120,7 +122,7 @@ onMounted(checkConnection)
         <header class="page-heading"><h1>{{ currentSection.name }}</h1><p class="intro">{{ currentSection.intro }}</p></header>
 
         <section class="workspace" :aria-label="currentSection.name + '内容'" :aria-busy="loading">
-          <div v-if="activeSection !== 'export'" class="domain-toolbar">
+          <div v-if="!['export', 'summary'].includes(activeSection)" class="domain-toolbar">
             <span class="section-label">知识领域</span>
             <div v-if="loading" class="toolbar-message">正在加载…</div>
             <div v-else-if="!ready" class="toolbar-message">暂不可用</div>
@@ -131,6 +133,7 @@ onMounted(checkConnection)
           </div>
           <div class="content-pane">
             <LearningExport v-if="ready && activeSection === 'export'" @busy="submittingAnswer = $event" />
+            <LearningSummary v-else-if="ready && activeSection === 'summary'" :domains="domains" />
             <template v-else-if="ready && selectedDomain">
               <DailyPractice v-if="activeSection === 'practice'" :domain-code="selectedCode" @busy="submittingAnswer = $event" />
               <ReviewPractice v-else-if="activeSection === 'review'" :domain-code="selectedCode" @busy="submittingAnswer = $event" />
