@@ -10,6 +10,7 @@ from sqlalchemy import select, text
 from sqlalchemy.engine import Engine
 from sqlalchemy.exc import SQLAlchemyError
 
+from app.admin import router as admin_router
 from app.auth import router as auth_router
 from app.config import Settings
 from app.database import create_db_engine
@@ -17,7 +18,7 @@ from app.models import Domain
 from app.practice import router as practice_router
 from app.reviews import router as reviews_router
 
-SCHEMA_REVISION = "0003_personal_review"
+SCHEMA_REVISION = "0004_question_publishing"
 
 
 class Readiness(BaseModel):
@@ -52,6 +53,7 @@ def create_app(engine: Engine | None = None) -> FastAPI:
     app.include_router(auth_router)
     app.include_router(practice_router)
     app.include_router(reviews_router)
+    app.include_router(admin_router)
 
     @app.exception_handler(RequestValidationError)
     async def invalid_request(request: Request, error: RequestValidationError):

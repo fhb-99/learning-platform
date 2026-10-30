@@ -323,6 +323,8 @@ def test_database_constraints_and_downgrade_guard(practice_env, monkeypatch):
         config = Config(str(Path(__file__).resolve().parents[1] / "alembic.ini"))
         with pytest.raises(RuntimeError, match="已有复习记录"):
             command.downgrade(config, "0002_daily_practice")
+        # MySQL DDL 不可整体回滚，前置的空管理表可能已降级，恢复至当前结构。
+        command.upgrade(config, "head")
         assert client.get("/api/ready").status_code == 200
 
 
